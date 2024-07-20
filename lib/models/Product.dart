@@ -1,9 +1,9 @@
 class Product{
-  String name, description, quantity,img_url,uid,buying_price,selling_price;
+  String name, description, quantity,img_url,uid,buying_price,selling_price,pid;
 
 
   Product(this.name, this.description, this.quantity, this.img_url, this.uid,
-      this.buying_price, this.selling_price);
+      this.buying_price, this.selling_price, this.pid);
 
   Map<String, dynamic> tomap(){
     return{
@@ -13,7 +13,8 @@ class Product{
       'img':img_url,
       'uid': uid,
       'buying': buying_price,
-      'selling': selling_price
+      'selling': selling_price,
+      'pid': pid,
     };
   }
 }

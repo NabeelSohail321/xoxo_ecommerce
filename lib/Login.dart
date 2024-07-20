@@ -126,7 +126,7 @@ class _LoginState extends State<Login> {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => Homescreen(user.uid)),
+                                    builder: (context) => Homescreenb(user.uid)),
                               );
 
                             }

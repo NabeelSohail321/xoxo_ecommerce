@@ -140,8 +140,7 @@ class _ProductsPageState extends State<ProductsPage> {
                     return Center(
                       child: buildCircularProgressIndicator(),
                     );
-                  }
-                  else if(snapshot.hasData){
+                  } else if (snapshot.hasData && snapshot.data!.snapshot.value != null) {
                     Map<dynamic,dynamic> map=snapshot.data!.snapshot.value as dynamic;
                     if (map == null) {
                       return Center(child: Text("No Product Found"));
@@ -191,9 +190,6 @@ class _ProductsPageState extends State<ProductsPage> {
                                       overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
                                     ),
                                   ),
-
-
-
                                 ],
                               ),
                             ),
@@ -202,17 +198,14 @@ class _ProductsPageState extends State<ProductsPage> {
                             : Container();
                       },
                     );
-                  }else{
-                    return Container();
+                  } else {
+                    return Center(child: Text("No Product Found"));
                   }
-
                 },
               ))
 
         ],
       ),
-
-
 
       floatingActionButton: SizedBox(
         height: 90,
@@ -339,7 +332,7 @@ class _ProductsPageState extends State<ProductsPage> {
                                 if (_formKey.currentState!.validate()) {
                                   await uploadImage();
                                   String id = dref.push().key.toString();
-                                  Product product = Product(_nameController.text, _descriptionController.text, _quantityController.text, url!,widget.uid,_buyingController.text,_sellingController.text);
+                                  Product product = Product(_nameController.text, _descriptionController.text, _quantityController.text, url!,widget.uid,_buyingController.text,_sellingController.text,id!);
                                   await dref.child(id).set(product.tomap()).then((value) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(content: Text('Product Uploaded')),
@@ -382,33 +375,9 @@ class _ProductsPageState extends State<ProductsPage> {
   }
 
   Widget buildCircularProgressIndicator() {
-    return StreamBuilder<double>(
-      stream: _progressStream(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          return Text("No Product Found");
-        } else {
-          return CircularProgressIndicator(
-            value: snapshot.data,
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.grey),
-            backgroundColor: Colors.grey[200],
-            strokeWidth: 4.0,
-          );
-        }
-      },
+    return CircularProgressIndicator(
+      valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
     );
   }
 
-  Stream<double> _progressStream() async* {
-    const int duration = 20; // Duration in seconds
-    const int interval = 1; // Update every second
-    for (int i = 0; i <= duration; i++) {
-      await Future.delayed(Duration(seconds: interval));
-      yield i / duration;
-    }
-    setState(() {
-      _noDataFound = true;
-    });
-  }
 }
-// flutter run -d chrome --web-renderer html

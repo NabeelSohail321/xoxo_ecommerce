@@ -1,10 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:xoxo_ecommerce/BuyerPages/ViewProduct.dart';
 import '../Login.dart';
 
 class Display extends StatefulWidget {
-  const Display({super.key});
+  final String uid;
+
+  Display(this.uid);
 
   @override
   State<Display> createState() => _DisplayState();
@@ -13,14 +16,15 @@ class Display extends StatefulWidget {
 class _DisplayState extends State<Display> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final dref = FirebaseDatabase.instance.ref("Products");
-
+  String? pid;
   Future<void> _signOut(BuildContext context) async {
     try {
-      await _auth.signOut();
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => Login()), // Navigate to your login screen
-      );
+      await _auth.signOut().then((value) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Login()), // Navigate to your login screen
+        );
+      });
     } catch (e) {
       print("Error signing out: $e");
       // Handle sign out error
@@ -82,25 +86,28 @@ class _DisplayState extends State<Display> {
                       strokeWidth: 4.0,
                     ),
                   );
-                } else if (snapshot.hasData && snapshot.data!.snapshot.value != null) {
+                } else if (snapshot.data?.snapshot.value == null) {
+                  return Center(
+                    child: Text("No products found"),
+                  );
+                } else {
                   Map<dynamic, dynamic> map = snapshot.data!.snapshot.value as dynamic;
-                  List<dynamic> list = [];
+                  List<dynamic>? list = [];
                   list.clear();
                   list = map.values.toList();
 
                   return GridView.extent(
                     maxCrossAxisExtent: 400,
                     children: List.generate(list.length, (index) {
+                      pid = list![index]['pid'];
                       return DashboardCard(
                         title: list[index]['name'],
                         img: list[index]['img'],
                         description: list[index]['description'],
+                        uid: widget.uid,
+                        pid: pid!,
                       );
                     }),
-                  );
-                } else {
-                  return Center(
-                    child: Text("No products found"),
                   );
                 }
               },
@@ -116,13 +123,23 @@ class DashboardCard extends StatelessWidget {
   final String title;
   final String img;
   final String description;
-  DashboardCard({required this.title, required this.img, required this.description});
+  final String uid, pid;
+
+  DashboardCard({
+    required this.title,
+    required this.img,
+    required this.description,
+    required this.uid,
+    required this.pid,
+  });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: (){
-
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) {
+          return viewProduct(uid, pid);
+        }, maintainState: true));
       },
       child: Card(
         margin: EdgeInsets.all(10.0),

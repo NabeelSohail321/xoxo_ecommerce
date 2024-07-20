@@ -6,17 +6,17 @@ import 'package:xoxo_ecommerce/SellerPages/Profile.dart';
 
 import '../Login.dart';
 
-class Homescreen extends StatefulWidget {
+class Homescreenb extends StatefulWidget {
   String uid;
 
 
-  Homescreen(this.uid);
+  Homescreenb(this.uid);
 
   @override
-  State<Homescreen> createState() => _HomescreenState();
+  State<Homescreenb> createState() => _HomescreenbState();
 }
 
-class _HomescreenState extends State<Homescreen> {
+class _HomescreenbState extends State<Homescreenb> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   Future<void> _signOut(BuildContext context) async {
     try {
@@ -99,7 +99,7 @@ class _MobileLayoutState extends State<MobileLayout> {
           InkWell(
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context){
-                return ProductsPage(widget.uid);
+                return Display(widget.uid);
               }));
             },
             child: DashboardCard(
@@ -197,7 +197,7 @@ class _WebLayoutState extends State<WebLayout> {
           InkWell(
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context){
-                return Display();
+                return Display(widget.uid);
               }));
             },
             child: DashboardCard(
