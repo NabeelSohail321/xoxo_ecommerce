@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:xoxo_ecommerce/BuyerPages/Cart.dart';
 import 'package:xoxo_ecommerce/BuyerPages/DisplayProducts.dart';
 import 'package:xoxo_ecommerce/SellerPages/Product_Management.dart';
 import 'package:xoxo_ecommerce/SellerPages/Profile.dart';
@@ -110,6 +111,9 @@ class _MobileLayoutState extends State<MobileLayout> {
           InkWell(
             onTap: () {
 
+              Navigator.push(context, MaterialPageRoute(builder: (context){
+                return cart(widget.uid);
+              }));
             },
             child: DashboardCard(
               title: 'Cart',

@@ -1,4 +1,4 @@
-import 'dart:html';
+
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -27,6 +27,7 @@ class _viewProductState extends State<viewProduct> {
   String? quantity ;
   String? img;
   String? sid;
+  int number =0 ;
 
 
   Future<void> _signOut(BuildContext context) async {
@@ -51,7 +52,7 @@ class _viewProductState extends State<viewProduct> {
 
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        // automaticallyImplyLeading: false,
         title: Text(
           'xoxo',
           style: TextStyle(
@@ -146,13 +147,38 @@ class _viewProductState extends State<viewProduct> {
         child: FloatingActionButton(
           onPressed: () async{
 
-            String id = cref.push().key.toString();
-            cart Cart = cart(id, widget.pid, widget.uid, title!, description!, price!,sid!);
-           await cref.child(widget.uid).child(id).set(Cart.tomap()).then((value) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Cart Updated')),
+
+            if(int.tryParse(quantity!)! > number) {
+              setState(() {
+                number=number+1;
+              });
+              String id = cref
+                  .push()
+                  .key
+                  .toString();
+              cart Cart = cart(
+                  id,
+                  widget.pid,
+                  widget.uid,
+                  title!,
+                  description!,
+                  price!,
+                  sid!,
+                  img!,
+                  number.toString()
               );
-            });
+              await cref.child(widget.uid).child(widget.pid).set(Cart.tomap()).then((
+                  value) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Cart Updated')),
+                );
+              });
+            }
+            else{
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Not have enough Quantity')),
+              );
+            }
           },child: Icon(Icons.add_shopping_cart, size: 40,),tooltip: 'add to cart',
         ),
       ),

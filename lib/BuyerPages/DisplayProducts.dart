@@ -36,7 +36,7 @@ class _DisplayState extends State<Display> {
     final height = MediaQuery.of(context).size.height;
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        // automaticallyImplyLeading: false,
         title: Text(
           'xoxo',
           style: TextStyle(
