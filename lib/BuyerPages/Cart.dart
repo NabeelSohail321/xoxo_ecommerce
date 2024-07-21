@@ -1,11 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-
 import '../Login.dart';
 
 class cart extends StatefulWidget {
-  String uid;
+  final String uid;
 
   cart(this.uid);
 
@@ -15,16 +14,16 @@ class cart extends StatefulWidget {
 
 class _cartState extends State<cart> {
   final cref = FirebaseDatabase.instance.ref('Cart');
+  final oref = FirebaseDatabase.instance.ref('BuyerOrders');
   final FirebaseAuth _auth = FirebaseAuth.instance;
   bool _noDataFound = false;
-  double num = 0;
-  String? name;
+  double? calculatedTotal;
+  String? name ;
   String? description;
+  String? img ;
+  String? number ;
   String? price;
-  String? img;
-  String? number;
-
-
+  String? pid;
 
   Future<void> _signOut(BuildContext context) async {
     try {
@@ -33,7 +32,6 @@ class _cartState extends State<cart> {
           context,
           MaterialPageRoute(builder: (context) => Login()), // Navigate to your login screen
         );
-
       });
     } catch (e) {
       print("Error signing out: $e");
@@ -41,12 +39,13 @@ class _cartState extends State<cart> {
     }
   }
 
-  Future<void> _total() async{
-    setState(() {
-      num=num+((double.tryParse(number!)!)*(double.tryParse(price!)!));
-    });
+  double _calculateTotal(List<dynamic> list) {
+    double total = 0;
+    for (var node in list) {
+      total += double.parse(node['price']) * int.parse(node['number']);
+    }
+    return total;
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -77,8 +76,6 @@ class _cartState extends State<cart> {
           ),
         ],
       ),
-
-
       body: Column(
         children: [
           Row(
@@ -86,95 +83,193 @@ class _cartState extends State<cart> {
             children: [
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text("Cart",style: TextStyle(
-                  fontSize: height * 0.03,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Ubuntu',
-                ),),
-              ),
-              Icon(Icons.shopping_cart,size: height*0.03,),
-            ],
-          ),
-Expanded(child: StreamBuilder(
-  stream: cref.child(widget.uid).orderByChild('uid').equalTo(widget.uid).onValue,
-  builder: (context, AsyncSnapshot<DatabaseEvent> snapshot){
-    if(!snapshot.hasData && !_noDataFound){
-    return Center(
-    child: buildCircularProgressIndicator(),
-    );
-    } else if (snapshot.hasData && snapshot.data!.snapshot.value != null) {
-    Map<dynamic,dynamic> map=snapshot.data!.snapshot.value as dynamic;
-    if (map == null) {
-    return Center(child: Text("No Product Found"));
-    }
-    List<dynamic>? list=[];
-    list.clear();
-    list=map.values.toList();
-
-    return ListView.builder(itemCount: list.length,
-        itemBuilder: ((context, index) {
-           name = list![index]['name'].toString();
-           description = list[index]['description'].toString();
-           price = list[index]['price'].toString();
-           img = list[index]['img'].toString();
-           number = list[index]['number'];
-          _total();
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 6),
-            child: Card(
-              elevation: 10,
-              child: Container(
-                padding: EdgeInsets.all(8.0),
-                // constraints: BoxConstraints(minHeight: 60),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                        name!,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      leading: CircleAvatar(
-                        radius: 30,
-                        backgroundImage: NetworkImage(img!),
-                      ),
-                      trailing: Text(number!),
-                      subtitle: Text(
-                        description!,
-                        style: TextStyle(
-                          fontSize: 14,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  "Cart",
+                  style: TextStyle(
+                    fontSize: height * 0.03,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Ubuntu',
+                  ),
                 ),
               ),
+              Icon(Icons.shopping_cart, size: height * 0.03),
+            ],
+          ),
+          Expanded(
+            child: StreamBuilder(
+              stream: cref.child(widget.uid).orderByChild('uid').equalTo(widget.uid).onValue,
+              builder: (context, AsyncSnapshot<DatabaseEvent> snapshot) {
+                if (!snapshot.hasData && !_noDataFound) {
+                  return Center(
+                    child: buildCircularProgressIndicator(),
+                  );
+                } else if (snapshot.hasData && snapshot.data!.snapshot.value != null) {
+                  Map<dynamic, dynamic> map = snapshot.data!.snapshot.value as dynamic;
+                  if (map == null) {
+                    return Center(child: Text("No Product Found"));
+                  }
+                  List<dynamic> list = map.values.toList();
+
+                  calculatedTotal = _calculateTotal(list);
+
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: list.length,
+                          itemBuilder: (context, index) {
+                             name = list[index]['name'].toString();
+                             description = list[index]['description'].toString();
+                             price = list[index]['price'].toString();
+                             img = list[index]['img'].toString();
+                             number = list[index]['number'].toString();
+
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 6),
+                              child: Card(
+                                elevation: 10,
+                                child: Container(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      ListTile(
+                                        contentPadding: EdgeInsets.zero,
+                                        title: Text(
+                                          name!,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        leading: CircleAvatar(
+                                          radius: 30,
+                                          backgroundImage: NetworkImage(img!),
+                                        ),
+                                        trailing: Text(number!),
+                                        subtitle: Text(
+                                          description!,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      Center(
+                        child: Text('Total Bill: ${calculatedTotal}',style: TextStyle(fontSize: height*0.03,fontWeight: FontWeight.bold),),
+                      ),
+                    ],
+                  );
+                } else {
+                  return Center(child: Text("No Product Found"));
+                }
+              },
             ),
-          );
-    }));
-
-
-    }else {
-      return Center(child: Text("No Product Found"));
-    }
-    },
-)),
-          Center(child: Text('Total Bill: $num'))
+          ),
         ],
+      ),
+      floatingActionButton: SizedBox(
+        height: 70,
+        width: 70,
+        child: FloatingActionButton(onPressed: () async{
 
+          final DatabaseService dbService = DatabaseService();
+          dbService.moveData('Cart/${widget.uid}', 'BuyerOrders', {'status': 'false'}).then((value) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Order placed successfully')),
+            );
+          });
+
+          // await cref.remove().then((value) {
+          //   ScaffoldMessenger.of(context).showSnackBar(
+          //     SnackBar(content: Text('Order placed successfully')),
+          //   );
+          // }).onError((error, stackTrace) {
+          //   ScaffoldMessenger.of(context).showSnackBar(
+          //     SnackBar(content: Text('Error placing order $error')),
+          //   );
+          // });
+        },child: Icon(Icons.check,size: height*0.05,),),
       ),
     );
   }
-    Widget buildCircularProgressIndicator() {
-    return CircularProgressIndicator(
-    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-    );
-    }
 
+  Widget buildCircularProgressIndicator() {
+    return CircularProgressIndicator(
+      valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+    );
   }
+}
+
+
+
+
+
+
+class DatabaseService {
+  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();
+
+  Future<void> moveData(String sourcePath, String destinationPath, Map<dynamic, dynamic> additionalData) async {
+    try {
+      // Step 1: Read the data from the source reference
+      DataSnapshot sourceSnapshot = await _dbRef.child(sourcePath).get();
+
+      if (sourceSnapshot.exists) {
+        Map<dynamic, dynamic> sourceData = Map<dynamic, dynamic>.from(sourceSnapshot.value as dynamic);
+
+        // Step 2: Check if the destination path exists
+        DataSnapshot destinationSnapshot = await _dbRef.child(destinationPath).get();
+
+        Map<dynamic, dynamic> destinationData = {};
+        if (destinationSnapshot.exists) {
+          // Destination exists, get existing data
+          destinationData = Map<dynamic, dynamic>.from(destinationSnapshot.value as dynamic);
+        }
+
+        // Step 3: Append source data to destination with unique key
+        sourceData.forEach((key, sourceProduct) async {
+          // Generate a new unique key in the destination path
+          String newUniqueKey = _dbRef.child(destinationPath).push().key!;
+
+          // Prepare the product data with additional information
+          Map<dynamic, dynamic> productData = Map<dynamic, dynamic>.from(sourceProduct);
+          productData.addAll(additionalData);
+
+          // If the product already exists in the destination, update the quantity
+          if (destinationData.containsKey(key)) {
+            Map<dynamic, dynamic> destinationProduct = Map<dynamic, dynamic>.from(destinationData[key] as dynamic);
+            int sourceQuantity = (sourceProduct['quantity'] as int?) ?? 0; // Use default 0 if null
+            int destinationQuantity = (destinationProduct['quantity'] as int?) ?? 0; // Use default 0 if null
+            destinationProduct['quantity'] = destinationQuantity + sourceQuantity;
+
+            // Update product data with the new quantity
+            productData['quantity'] = destinationProduct['quantity'];
+          }
+
+          // Append the product data with the new unique key
+          destinationData[newUniqueKey] = productData;
+        });
+
+        // Step 4: Write the updated data to the destination reference
+        await _dbRef.child(destinationPath).set(destinationData);
+
+        // Step 5: Optionally, delete the data from the source reference (if necessary)
+        await _dbRef.child(sourcePath).remove();
+
+        print('Data moved and quantities updated successfully from $sourcePath to $destinationPath');
+      } else {
+        print('No data found at $sourcePath');
+      }
+    } catch (e) {
+      print('Failed to move data: $e');
+    }
+  }
+}

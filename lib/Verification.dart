@@ -94,7 +94,7 @@ class _VerificationState extends State<Verification> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Verification failed. Please try again.')),
+          SnackBar(content: Text('Verification failed. Please try again. $e')),
         );
       },
       codeSent: (String verificationId, int? resendToken) {

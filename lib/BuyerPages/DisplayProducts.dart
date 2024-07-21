@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:xoxo_ecommerce/BuyerPages/Cart.dart';
+import 'package:xoxo_ecommerce/BuyerPages/HomeScreen.dart';
 import 'package:xoxo_ecommerce/BuyerPages/ViewProduct.dart';
 import '../Login.dart';
 
@@ -36,7 +38,7 @@ class _DisplayState extends State<Display> {
     final height = MediaQuery.of(context).size.height;
     return Scaffold(
       appBar: AppBar(
-        // automaticallyImplyLeading: false,
+        automaticallyImplyLeading: false,
         title: Text(
           'xoxo',
           style: TextStyle(
@@ -48,15 +50,32 @@ class _DisplayState extends State<Display> {
         centerTitle: true,
         toolbarHeight: height * 0.2,
         actions: [
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: height * 0.08, horizontal: height * 0.01),
-            child: InkWell(
-              onTap: () {
+          PopupMenuButton(itemBuilder: (context){
+            return [
+              PopupMenuItem(child: Icon(Icons.logout), onTap: (){
                 _signOut(context);
-              },
-              child: Icon(Icons.logout, size: height * 0.06),
-            ),
-          ),
+              },),
+              PopupMenuItem(child: Icon(Icons.shopping_cart),onTap: (){
+                Navigator.push(context, MaterialPageRoute(builder: (context) {
+                  return cart(widget.uid);
+                }));
+              },),
+              PopupMenuItem(child: Icon(Icons.home),onTap: (){
+                Navigator.push(context, MaterialPageRoute(builder: (context) {
+                  return Homescreenb(widget.uid);
+                }));
+              },)
+            ];
+          },iconSize: height*0.04,)
+          // Padding(
+          //   padding: EdgeInsets.symmetric(vertical: height * 0.08, horizontal: height * 0.01),
+          //   child: InkWell(
+          //     onTap: () {
+          //       _signOut(context);
+          //     },
+          //     child: Icon(Icons.logout, size: height * 0.06),
+          //   ),
+          // ),
         ],
       ),
       body: Column(
