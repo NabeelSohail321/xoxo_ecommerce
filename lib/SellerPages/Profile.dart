@@ -134,7 +134,7 @@ class _ProfileState extends State<Profile> {
 
           Expanded(child: StreamBuilder(
             stream: dref.orderByChild("uid").equalTo(widget.uid).onValue,
-            builder: (contex, AsyncSnapshot<DatabaseEvent> snapshot){
+            builder: (context, AsyncSnapshot<DatabaseEvent> snapshot){
               if(!snapshot.hasData){
                 return Center(
                   child: CircularProgressIndicator(

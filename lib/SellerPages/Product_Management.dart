@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:xoxo_ecommerce/SellerPages/ProductView.dart';
 import 'dart:io';
 import '../Login.dart';
 import '../models/Product.dart';
@@ -156,41 +157,49 @@ class _ProductsPageState extends State<ProductsPage> {
                         String description = list[index]['description'].toString();
                         String quantity = list[index]['quantity'].toString();
                         String img = list[index]['img'].toString();
+                        String pid = list[index]['pid'].toString();
 
                         return (list.length != 0)
                             ? Padding(
                           padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 6),
-                          child: Card(
-                            elevation: 10,
-                            child: Container(
-                              padding: EdgeInsets.all(8.0),
-                              // constraints: BoxConstraints(minHeight: 60),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  ListTile(
-                                    contentPadding: EdgeInsets.zero,
-                                    title: Text(
-                                      name,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
+                          child: InkWell(
+                          onTap: (){
+                            Navigator.push(context, MaterialPageRoute(builder: (context) {
+                              return ProductView(pid);
+                            },));
+                          },
+                            child: Card(
+                              elevation: 10,
+                              child: Container(
+                                padding: EdgeInsets.all(8.0),
+                                // constraints: BoxConstraints(minHeight: 60),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      title: Text(
+                                        name,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      leading: CircleAvatar(
+                                        radius: 30,
+                                        backgroundImage: NetworkImage(img),
+                                      ),
+                                      trailing: Text(quantity),
+                                      subtitle: Text(
+                                        description,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
                                       ),
                                     ),
-                                    leading: CircleAvatar(
-                                      radius: 30,
-                                      backgroundImage: NetworkImage(img),
-                                    ),
-                                    trailing: Text(quantity),
-                                    subtitle: Text(
-                                      description,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
-                                    ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
