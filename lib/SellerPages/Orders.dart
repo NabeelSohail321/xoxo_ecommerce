@@ -4,17 +4,16 @@ import 'package:flutter/material.dart';
 
 import '../Login.dart';
 
-class BuyerOrders extends StatefulWidget {
-  String uid;
+class Orders extends StatefulWidget {
+  final String uid;
 
-
-  BuyerOrders(this.uid);
+  Orders(this.uid);
 
   @override
-  State<BuyerOrders> createState() => _BuyerOrdersState();
+  State<Orders> createState() => _OrdersState();
 }
 
-class _BuyerOrdersState extends State<BuyerOrders> {
+class _OrdersState extends State<Orders> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
@@ -22,14 +21,15 @@ class _BuyerOrdersState extends State<BuyerOrders> {
     final height = MediaQuery.of(context).size.height;
     final oref = FirebaseDatabase.instance.ref('BuyerOrders');
 
-    String? name ;
+    String? name;
     String? description;
-    String? img ;
-    String? number ;
+    String? img;
+    String? number;
     String? price;
     bool _noDataFound = false;
     String? status;
     String? date;
+    String? cid;
 
     Widget buildCircularProgressIndicator() {
       return CircularProgressIndicator(
@@ -37,6 +37,47 @@ class _BuyerOrdersState extends State<BuyerOrders> {
       );
     }
 
+    Future<void> _AcceptOrders(List<dynamic> list, int index) async {
+      // Ensure list is not empty and index is valid
+      if (list.isNotEmpty && index < list.length) {
+        String cid = list[index]['cid'];
+        String status = list[index]['status'].toString().toLowerCase();
+
+        // Debugging output
+        print("Accepting order with cid: $cid and status: $status");
+
+        if (status == 'false') {
+          // Query to find the order by cid
+          DataSnapshot snapshot = await oref.orderByChild('cid').equalTo(cid).get();
+
+          if (snapshot.exists) {
+            Map<dynamic, dynamic> map1 = snapshot.value as Map<dynamic, dynamic>;
+
+            // Find the key for the order to update
+            String key = map1.keys.firstWhere((k) => map1[k]['cid'] == cid);
+
+            // print(key);
+            await oref.child(key).update({'status': 'true'}).then((value) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Order accepted. ')),
+              );
+            });
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Order not found.')),
+            );
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Order already accepted.')),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid order.')),
+        );
+      }
+    }
 
 
     Future<void> _signOut(BuildContext context) async {
@@ -97,10 +138,9 @@ class _BuyerOrdersState extends State<BuyerOrders> {
               Icon(Icons.shopping_cart, size: height * 0.03),
             ],
           ),
-
           Expanded(
             child: StreamBuilder(
-              stream: oref.orderByChild('uid').equalTo(widget.uid).onValue,
+              stream: oref.orderByChild('sid').equalTo(widget.uid).onValue,
               builder: (context, AsyncSnapshot<DatabaseEvent> snapshot) {
                 if (!snapshot.hasData && !_noDataFound) {
                   return Center(
@@ -112,7 +152,6 @@ class _BuyerOrdersState extends State<BuyerOrders> {
                     return Center(child: Text("No Product Found"));
                   }
                   List<dynamic> list = map.values.toList();
-
 
                   return Column(
                     children: [
@@ -126,16 +165,19 @@ class _BuyerOrdersState extends State<BuyerOrders> {
                             img = list[index]['img'].toString();
                             number = list[index]['number'].toString();
                             status = list[index]['status'].toString().toLowerCase();
-                            date= list[index]['date'];
+                            date = list[index]['date'];
+                            cid = list[index]['cid'];
 
+                            // print(list);
                             return Padding(
                               padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 6),
                               child: Card(
                                 elevation: 10,
                                 child: Container(
+                                  height: height * 0.13,
                                   padding: EdgeInsets.all(8.0),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
                                       ListTile(
                                         contentPadding: EdgeInsets.zero,
@@ -150,23 +192,25 @@ class _BuyerOrdersState extends State<BuyerOrders> {
                                           backgroundImage: NetworkImage(img!),
                                         ),
                                         trailing: Padding(
-                                          padding: const EdgeInsets.only(top: 10.0),
+                                          padding: EdgeInsets.only(top: height * 0.01),
                                           child: Column(
                                             children: [
                                               Text('date is: $date'),
-                                              Text('quantity is: $number')
+                                              Text('quantity is: $number'),
                                             ],
                                           ),
                                         ),
-                                        subtitle: (status == 'false')? Text(
+                                        subtitle: (status == 'false')
+                                            ? Text(
                                           'Order Pending',
                                           style: TextStyle(
                                             fontSize: 14,
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
-                                        ):Text(
-                                          'Deliver in 10 to 15 days',
+                                        )
+                                            : Text(
+                                          'Accepted',
                                           style: TextStyle(
                                             fontSize: 14,
                                           ),
@@ -174,6 +218,12 @@ class _BuyerOrdersState extends State<BuyerOrders> {
                                           overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
                                         ),
                                       ),
+                                      status == 'false'?
+                                      ElevatedButton(
+                                          onPressed: () async {
+                                            await _AcceptOrders(list,index);
+                                          },
+                                          child: Text('Accept')):Text('Will be delivered in 10 to 15 days')
                                     ],
                                   ),
                                 ),
@@ -190,10 +240,8 @@ class _BuyerOrdersState extends State<BuyerOrders> {
               },
             ),
           ),
-
         ],
       ),
-
     );
   }
 }

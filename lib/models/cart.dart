@@ -1,7 +1,7 @@
 class cart {
-  String cid,pid,uid,name,description,price,sid,img,number;
+  String cid,pid,uid,name,description,price,sid,img,number, date;
 
-  cart(this.cid, this.pid, this.uid, this.name, this.description, this.price, this.sid,this.img,this.number);
+  cart(this.cid, this.pid, this.uid, this.name, this.description, this.price, this.sid,this.img,this.number,this.date);
 
   Map<String, dynamic> tomap(){
     return{
@@ -13,7 +13,8 @@ class cart {
       'price':price,
       'sid': sid,
       'img': img,
-      'number': number
+      'number': number,
+      'date':date
     };
   }
 }

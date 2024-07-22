@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -15,15 +17,18 @@ class cart extends StatefulWidget {
 class _cartState extends State<cart> {
   final cref = FirebaseDatabase.instance.ref('Cart');
   final oref = FirebaseDatabase.instance.ref('BuyerOrders');
+  final pref = FirebaseDatabase.instance.ref('Products');
+
   final FirebaseAuth _auth = FirebaseAuth.instance;
   bool _noDataFound = false;
   double? calculatedTotal;
-  String? name ;
+  String? name;
   String? description;
-  String? img ;
-  String? number ;
+  String? img;
+  String? number;
   String? price;
   String? pid;
+  String? date;
 
   Future<void> _signOut(BuildContext context) async {
     try {
@@ -45,6 +50,27 @@ class _cartState extends State<cart> {
       total += double.parse(node['price']) * int.parse(node['number']);
     }
     return total;
+  }
+
+  Future<void> _updateQuantity(String number, String pid) async {
+    DataSnapshot snapshot = await pref.orderByChild('pid').equalTo(pid).get();
+
+    if (snapshot.exists) {
+      Map<dynamic, dynamic> map1 = snapshot.value as Map<dynamic, dynamic>;
+      List<dynamic> list1 = map1.values.toList();
+
+      for (var item in list1) {
+        String quantity = item['quantity'].toString();
+        if ((int.parse(quantity) - int.parse(number)) > 0) {
+          await pref.child(pid).update({
+            'quantity': (int.parse(quantity) - int.parse(number)).toString()
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Quantity updated.')),
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -104,7 +130,7 @@ class _cartState extends State<cart> {
                     child: buildCircularProgressIndicator(),
                   );
                 } else if (snapshot.hasData && snapshot.data!.snapshot.value != null) {
-                  Map<dynamic, dynamic> map = snapshot.data!.snapshot.value as dynamic;
+                  Map<dynamic, dynamic> map = snapshot.data!.snapshot.value as Map<dynamic, dynamic>;
                   if (map == null) {
                     return Center(child: Text("No Product Found"));
                   }
@@ -118,11 +144,15 @@ class _cartState extends State<cart> {
                         child: ListView.builder(
                           itemCount: list.length,
                           itemBuilder: (context, index) {
-                             name = list[index]['name'].toString();
-                             description = list[index]['description'].toString();
-                             price = list[index]['price'].toString();
-                             img = list[index]['img'].toString();
-                             number = list[index]['number'].toString();
+                            name = list[index]['name'].toString();
+                            description = list[index]['description'].toString();
+                            price = list[index]['price'].toString();
+                            img = list[index]['img'].toString();
+                            number = list[index]['number'].toString();
+                            date = list[index]['date'];
+                            pid = list[index]['pid'];
+
+                            _updateQuantity(number!, pid!);
 
                             return Padding(
                               padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 6),
@@ -145,7 +175,15 @@ class _cartState extends State<cart> {
                                           radius: 30,
                                           backgroundImage: NetworkImage(img!),
                                         ),
-                                        trailing: Text(number!),
+                                        trailing: Padding(
+                                          padding: const EdgeInsets.only(top: 10.0),
+                                          child: Column(
+                                            children: [
+                                              Text('Date: $date'),
+                                              Text('Quantity: $number')
+                                            ],
+                                          ),
+                                        ),
                                         subtitle: Text(
                                           description!,
                                           style: TextStyle(
@@ -164,7 +202,10 @@ class _cartState extends State<cart> {
                         ),
                       ),
                       Center(
-                        child: Text('Total Bill: ${calculatedTotal}',style: TextStyle(fontSize: height*0.03,fontWeight: FontWeight.bold),),
+                        child: Text(
+                          'Total Bill: ${calculatedTotal}',
+                          style: TextStyle(fontSize: height * 0.03, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ],
                   );
@@ -179,25 +220,17 @@ class _cartState extends State<cart> {
       floatingActionButton: SizedBox(
         height: 70,
         width: 70,
-        child: FloatingActionButton(onPressed: () async{
-
-          final DatabaseService dbService = DatabaseService();
-          dbService.moveData('Cart/${widget.uid}', 'BuyerOrders', {'status': 'false'}).then((value) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Order placed successfully')),
-            );
-          });
-
-          // await cref.remove().then((value) {
-          //   ScaffoldMessenger.of(context).showSnackBar(
-          //     SnackBar(content: Text('Order placed successfully')),
-          //   );
-          // }).onError((error, stackTrace) {
-          //   ScaffoldMessenger.of(context).showSnackBar(
-          //     SnackBar(content: Text('Error placing order $error')),
-          //   );
-          // });
-        },child: Icon(Icons.check,size: height*0.05,),),
+        child: FloatingActionButton(
+          onPressed: () async {
+            final DatabaseService dbService = DatabaseService();
+            dbService.moveData('Cart/${widget.uid}', 'BuyerOrders', {'status': 'false'}).then((value) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Order placed successfully')),
+              );
+            });
+          },
+          child: Icon(Icons.check, size: height * 0.05),
+        ),
       ),
     );
   }
@@ -208,11 +241,6 @@ class _cartState extends State<cart> {
     );
   }
 }
-
-
-
-
-
 
 class DatabaseService {
   final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();

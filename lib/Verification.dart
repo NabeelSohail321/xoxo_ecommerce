@@ -7,21 +7,16 @@ import 'package:xoxo_ecommerce/Login.dart';
 import 'package:xoxo_ecommerce/models/signup.dart';
 import 'dart:io';
 
-import 'SellerPages/HomeScreen.dart';
-
 class Verification extends StatefulWidget {
   final String phoneNumber;
   final String name;
   final String email;
   final String password;
-  // final String Url;
   final String role;
   File? file;
   dynamic pickfile;
-  // 1 is for seller
-  // 2 is for buyer
-  // 3 is for ryder
-   Verification({
+
+  Verification({
     required this.phoneNumber,
     required this.name,
     required this.email,
@@ -38,24 +33,22 @@ class Verification extends StatefulWidget {
 class _VerificationState extends State<Verification> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final TextEditingController _codeController = TextEditingController();
-  String _verificationId = "";
   bool _isLoading = false;
   final dref = FirebaseDatabase.instance.ref("User");
   final storref = FirebaseStorage.instance;
   String? url;
-
-  String? id;
+  User? _user;
 
   @override
   void initState() {
     super.initState();
-    _verifyPhone();
+    _createUser();
   }
+
   Future<void> uploadImage(String id) async {
     try {
       if (widget.file != null || widget.pickfile != null) {
-        final imageRef = storref.ref()
-            .child("Images/${id}.jpg");
+        final imageRef = storref.ref().child("Images/${id}.jpg");
         UploadTask uploadTask;
         if (kIsWeb) {
           final byte = await widget.pickfile.readAsBytes();
@@ -77,110 +70,127 @@ class _VerificationState extends State<Verification> {
     }
   }
 
-  void _verifyPhone() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    await _auth.verifyPhoneNumber(
-      phoneNumber: widget.phoneNumber,
-      verificationCompleted: (PhoneAuthCredential credential) async {
-        await _auth.signInWithCredential(credential);
-        _signUp();
-      },
-      verificationFailed: (FirebaseAuthException e) {
-        setState(() {
-          _isLoading = false;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Verification failed. Please try again. $e')),
-        );
-      },
-      codeSent: (String verificationId, int? resendToken) {
-        setState(() {
-          _verificationId = verificationId;
-          _isLoading = false;
-        });
-      },
-      codeAutoRetrievalTimeout: (String verificationId) {
-        setState(() {
-          _verificationId = verificationId;
-        });
-      },
-    );
-  }
-
-  void _signInWithPhoneNumber() async {
+  Future<void> _createUser() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final AuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId,
-        smsCode: _codeController.text,
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: widget.email,
+        password: widget.password,
       );
+      _user = userCredential.user;
 
-      final User? user = (await _auth.signInWithCredential(credential)).user;
-
-      if (user != null) {
-        _signUp();
-      } else {
+      if (_user != null) {
+        await _user!.sendEmailVerification();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sign in failed')),
+          SnackBar(content: Text('Verification email sent to ${widget.email}')),
         );
         setState(() {
           _isLoading = false;
         });
+
+        // Show the verification check button
+        _showVerificationCheckButton();
       }
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Sign up failed: $e')),
+      );
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
     }
   }
 
-  void _signUp() async {
+  void _showVerificationCheckButton() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Verify Email'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Please check your email for verification.'),
+              SizedBox(height: 20),
+              _isLoading
+                  ? CircularProgressIndicator()
+                  : ElevatedButton(
+                onPressed: _checkEmailVerification,
+                child: Text('Check Verification'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _checkEmailVerification() async {
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
-      UserCredential userCredential =await _auth.createUserWithEmailAndPassword(
-        email: widget.email,
-        password: widget.password,
-      );
-      User? user = userCredential.user;
-      id = user?.uid;
-      await uploadImage(id!);
-      SignUp signUp = SignUp(widget.name, widget.email, widget.phoneNumber, widget.password, url!,id!,widget.role);
-      await dref.child(id!).set(signUp.tomap()).then((value) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sign up successful')),
-        );
-      }).onError((error, stackTrace) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('error sigining up $error')),
-        );
-      });
+      if (_user == null) throw Exception("No user found.");
 
+      // Reload the user data
+      await _user!.reload();
+      _user = _auth.currentUser; // Refresh user
 
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => Login()),
-      );
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'email-already-in-use') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('The email address is already in use.')),
-        );
+      if (_user != null && _user!.emailVerified) {
+        await _signUp();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sign up failed. Please try again.')),
+          SnackBar(content: Text('Please verify your email first.')),
         );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _signUp() async {
+    try {
+      if (_user != null) {
+        await uploadImage(_user!.uid);
+        SignUp signUp = SignUp(
+          widget.name,
+          widget.email,
+          widget.phoneNumber,
+          widget.password,
+          url!,
+          _user!.uid,
+          widget.role,
+        );
+        await dref.child(_user!.uid).set(signUp.tomap()).then((value) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Sign up successful')),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => Login()),
+          );
+        }).onError((error, stackTrace) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error signing up: $error')),
+          );
+        });
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -212,26 +222,18 @@ class _VerificationState extends State<Verification> {
           child: Column(
             children: [
               Text(
-                'A verification code has been sent to ${widget.phoneNumber}',
+                'A verification email has been sent to ${widget.email}. Please check your inbox.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: height * 0.03),
               ),
               SizedBox(height: height * 0.02),
-              TextField(
-                controller: _codeController,
-                decoration: InputDecoration(labelText: "Verification Code"),
-              ),
-              SizedBox(height: height * 0.02),
-              _isLoading
-                  ? CircularProgressIndicator()
-                  : ElevatedButton(
-                onPressed: ()async{
-
-                  _signInWithPhoneNumber();
-
-                },
-                child: Text('Verify'),
-              ),
+              if (_isLoading)
+                CircularProgressIndicator()
+              else
+                ElevatedButton(
+                  onPressed: _showVerificationCheckButton,
+                  child: Text('Check Email Verification'),
+                ),
             ],
           ),
         ),

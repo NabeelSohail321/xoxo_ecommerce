@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:xoxo_ecommerce/models/cart.dart';
 
 import '../Login.dart';
@@ -26,6 +27,9 @@ class _viewProductState extends State<viewProduct> {
   String? sid;
   int number = 0;
 
+
+
+
   Future<void> _signOut(BuildContext context) async {
     try {
       await _auth.signOut().then((value) {
@@ -43,6 +47,8 @@ class _viewProductState extends State<viewProduct> {
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
+    DateTime now = DateTime.now();
+    String formattedDate = DateFormat('yyyy-MM-dd – kk:mm').format(now);
 
     return Scaffold(
       appBar: AppBar(
@@ -178,7 +184,8 @@ class _viewProductState extends State<viewProduct> {
                       price!,
                       sid!,
                       img!,
-                      '1'
+                      '1',
+                    formattedDate,
                   );
                   await cref.child(widget.uid).child(widget.pid).set(Cart.tomap()).then((_) {
                     ScaffoldMessenger.of(context).showSnackBar(
