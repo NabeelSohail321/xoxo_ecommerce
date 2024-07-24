@@ -41,6 +41,7 @@ dependencies:
   image_picker: ^1.1.2
   firebase_storage: ^12.1.0
   intl: ^0.17.0
+  animated_rating_stars: ^1.0.1
 
 dev_dependencies:
   flutter_test:
