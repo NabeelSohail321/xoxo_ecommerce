@@ -6,7 +6,7 @@ import 'package:xoxo_ecommerce/BuyerPages/DisplayProducts.dart';
 import 'package:xoxo_ecommerce/SellerPages/Product_Management.dart';
 import 'package:xoxo_ecommerce/SellerPages/Profile.dart';
 
-import '../Login.dart';
+import '../Authentication/Login.dart';
 
 class Homescreenb extends StatefulWidget {
   String uid;

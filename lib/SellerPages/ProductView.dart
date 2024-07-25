@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import '../Login.dart';
+import '../Authentication/Login.dart';
 
 class ProductView extends StatefulWidget {
   String pid;

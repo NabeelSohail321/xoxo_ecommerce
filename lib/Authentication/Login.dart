@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:xoxo_ecommerce/RiderPages/Rider.dart';
 import 'package:xoxo_ecommerce/SellerPages/HomeScreen.dart';
 import 'package:xoxo_ecommerce/BuyerPages/HomeScreen.dart';
 
@@ -161,6 +162,13 @@ class _LoginState extends State<Login> {
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) => Homescreenb(user.uid)),
+                              );
+
+                            }else if(role == '3'){
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => Rider()),
                               );
 
                             }

@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
-import '../Login.dart';
+import '../Authentication/Login.dart';
 
 class Profile extends StatefulWidget {
   String uid;

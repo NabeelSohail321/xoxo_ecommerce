@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
-import '../Login.dart';
+import '../Authentication/Login.dart';
 
 class BuyerOrders extends StatefulWidget {
   String uid;
@@ -178,9 +178,18 @@ class _BuyerOrdersState extends State<BuyerOrders> {
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
                                         ),
-                                      ):Center(
+                                      ):(status=='true')? Center(
                                         child: Text(
                                           'Deliver in 10 to 15 days',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
+                                        ),
+                                      ): Center(
+                                        child: Text(
+                                          'Order Delivered',
                                           style: TextStyle(
                                             fontSize: 14,
                                           ),

@@ -6,7 +6,7 @@ import 'package:xoxo_ecommerce/BuyerPages/Cart.dart';
 import 'package:xoxo_ecommerce/BuyerPages/HomeScreen.dart';
 import 'package:xoxo_ecommerce/BuyerPages/ViewProduct.dart';
 import 'package:xoxo_ecommerce/models/Rating.dart';
-import '../Login.dart';
+import '../Authentication/Login.dart';
 
 class Display extends StatefulWidget {
   final String uid;

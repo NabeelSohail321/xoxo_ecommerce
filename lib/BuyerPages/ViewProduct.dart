@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:xoxo_ecommerce/models/cart.dart';
 
-import '../Login.dart';
+import '../Authentication/Login.dart';
 
 class viewProduct extends StatefulWidget {
   String uid, pid;
@@ -26,6 +26,7 @@ class _viewProductState extends State<viewProduct> {
   String? img;
   String? sid;
   int number = 0;
+  String? buying;
 
 
 
@@ -107,6 +108,7 @@ class _viewProductState extends State<viewProduct> {
                       quantity = list[index]['quantity'];
                       img = list[index]['img'].toString();
                       sid = list[index]['uid'].toString();
+                      buying = list[index]['buying'].toString();
 
                       return Center(
                         child: Column(
@@ -186,6 +188,7 @@ class _viewProductState extends State<viewProduct> {
                       img!,
                       '1',
                     formattedDate,
+                    buying!
                   );
                   await cref.child(widget.uid).child(widget.pid).set(Cart.tomap()).then((_) {
                     ScaffoldMessenger.of(context).showSnackBar(

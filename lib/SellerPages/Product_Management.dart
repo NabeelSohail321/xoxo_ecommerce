@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:xoxo_ecommerce/SellerPages/ProductView.dart';
 import 'dart:io';
-import '../Login.dart';
+import '../Authentication/Login.dart';
 import '../models/Product.dart';
 
 class ProductsPage extends StatefulWidget {
