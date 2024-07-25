@@ -157,6 +157,7 @@ class _ProfileState extends State<Profile> {
                    img = list[index]['img'].toString();
 
 
+                   // _namecontroller.text=name!;
                    return Center(
                      child: Column(
                        children: [
@@ -173,57 +174,92 @@ class _ProfileState extends State<Profile> {
                            ),
                          ),
                          Padding(
-                           padding: const EdgeInsets.all(10.0),
-                           child: ListTile(
-                             title: Text(name!),
-                             trailing: IconButton(onPressed: (){
-                               showDialog(context: context, builder: (context) {
-                                 return AlertDialog(
-                                   scrollable: true,
-                                   content: Column(
-                                     mainAxisAlignment: MainAxisAlignment.center,
-                                     crossAxisAlignment: CrossAxisAlignment.center,
-                                     children: [
-                                       TextField(
-                                         controller: _namecontroller,
-                                         decoration: InputDecoration(
-                                           hintText: 'Enter name',
-                                           labelText: 'Name',
-                                         ),
-                                       ),
-                                       SizedBox(height: 20,),
-                                       Center(
-                                         child: Row(
+                           padding:  EdgeInsets.symmetric(vertical:height*0.04),
+                           child: Container(
 
-                                           mainAxisAlignment: MainAxisAlignment.center,
-                                           children: [
-                                             ElevatedButton(onPressed: ()async{
-                                              await dref.child(widget.uid).update({
-                                                 "name": _namecontroller.text.toString()
-                                               });
-                                              setState(() {
-                                                _namecontroller.text='';
-                                              });
-                                              Navigator.pop(context);
-                                             }, child: Text('save')),
-                                             Padding(
-                                               padding: const EdgeInsets.symmetric(horizontal: 18.0),
-                                               child: ElevatedButton(onPressed: (){
-                                                 Navigator.pop(context);
-                                               }, child: Text('cancel')),
-                                             )
-                                           ],
+                             decoration: BoxDecoration(
+                               border: Border.all(
+                                 color: Colors.black12, // Border color
+                                 width: 2.0, // Border width
+                               ),
+                               borderRadius: BorderRadius.circular(10.0), // Border radius
+                             ),
+                             child: ListTile(
+                               title: Text(name!),
+                               trailing: IconButton(onPressed: (){
+                                 showDialog(context: context, builder: (context) {
+                                   return AlertDialog(
+                                     scrollable: true,
+                                     content: Column(
+                                       mainAxisAlignment: MainAxisAlignment.center,
+                                       crossAxisAlignment: CrossAxisAlignment.center,
+                                       children: [
+                                         Padding(
+                                           padding:  EdgeInsets.symmetric(vertical: height*0.02),
+                                           child: TextField(
+
+                                             controller: _namecontroller,
+                                             decoration: InputDecoration(
+                                               focusedBorder: OutlineInputBorder(
+                                                 borderSide: BorderSide(
+                                                   color: Colors.black12, // Border color when not focused
+                                                   width: 1.0, // Border width
+                                                 ),
+                                                 borderRadius: BorderRadius.circular(10.0),
+                                               ),
+                                               hintText: 'Enter name',
+                                               labelText: 'Name',
+                                               enabledBorder: OutlineInputBorder(
+                                                 borderSide: BorderSide(
+                                                   color: Colors.black12, // Border color when not focused
+                                                   width: 1.0, // Border width
+                                                 ),
+                                                 borderRadius: BorderRadius.circular(10.0),
+                                               ),
+                                             ),
+                                           ),
                                          ),
-                                       ),
-                                     ],
-                                   ),
-                                 );
-                               },);
-                             }, icon: Icon(Icons.edit))
+                                         SizedBox(height: 20,),
+                                         Center(
+                                           child: Row(
+
+                                             mainAxisAlignment: MainAxisAlignment.center,
+                                             children: [
+                                               ElevatedButton(onPressed: ()async{
+                                                await dref.child(widget.uid).update({
+                                                   "name": _namecontroller.text.toString()
+                                                 });
+                                                setState(() {
+                                                  _namecontroller.text='';
+                                                });
+                                                Navigator.pop(context);
+                                               }, child: Text('save')),
+                                               Padding(
+                                                 padding: const EdgeInsets.symmetric(horizontal: 18.0),
+                                                 child: ElevatedButton(onPressed: (){
+                                                   Navigator.pop(context);
+                                                 }, child: Text('cancel')),
+                                               )
+                                             ],
+                                           ),
+                                         ),
+                                       ],
+                                     ),
+                                   );
+                                 },);
+                               }, icon: Icon(Icons.edit))
+                             ),
                            ),
                          ),
-                         Padding(
-                           padding: const EdgeInsets.all(10.0),
+                         Container(
+                           decoration: BoxDecoration(
+                             border: Border.all(
+                               color: Colors.black12, // Border color
+                               width: 2.0, // Border width
+                             ),
+                             borderRadius: BorderRadius.circular(10.0), // Border radius
+                           ),
+
                            child: ListTile(
                                title: Text(email!),
                            ),

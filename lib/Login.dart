@@ -58,23 +58,57 @@ class _LoginState extends State<Login> {
                   key: _formKey,
                   child: Column(
                     children: [
-                      TextFormField(
-                        controller: _emailController,
-                        decoration: InputDecoration(labelText: "Email"),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your email';
-                          } else if (!RegExp(
-                              r"^[a-zA-Z0-9.!#$%&'*+/=?^_{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$")
-                              .hasMatch(value)) {
-                            return "Please enter a valid email";
-                          }
-                          return null;
-                        },
+                      Padding(
+                        padding:  EdgeInsets.only(top: 8.0),
+                        child: TextFormField(
+                          controller: _emailController,
+                          decoration: InputDecoration(
+                              labelText: "Email",
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Colors.black12, // Border color when not focused
+                                  width: 1.0, // Border width
+                                ),
+                                borderRadius: BorderRadius.circular(10.0),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Colors.black12, // Border color when not focused
+                                  width: 1.0, // Border width
+                                ),
+                                borderRadius: BorderRadius.circular(10.0),
+                              )
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your email';
+                            } else if (!RegExp(
+                                r"^[a-zA-Z0-9.!#$%&'*+/=?^_{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$")
+                                .hasMatch(value)) {
+                              return "Please enter a valid email";
+                            }
+                            return null;
+                          },
+                        ),
                       ),
+                      SizedBox(height: height * 0.02,),
                       TextFormField(
                         controller: _passwordController,
                         decoration: InputDecoration(
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.black12, // Border color when not focused
+                              width: 1.0, // Border width
+                            ),
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.black12, // Border color when not focused
+                              width: 1.0, // Border width
+                            ),
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
                           labelText: "Password",
                           suffixIcon: IconButton(
                             icon: Icon(

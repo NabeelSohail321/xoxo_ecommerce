@@ -174,7 +174,8 @@ class _OrdersState extends State<Orders> {
                               child: Card(
                                 elevation: 10,
                                 child: Container(
-                                  height: height * 0.13,
+
+                                  height: status == 'false' ?height * 0.17: height*0.15,
                                   padding: EdgeInsets.all(8.0),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.center,

@@ -118,6 +118,7 @@ class _BuyerOrdersState extends State<BuyerOrders> {
                     children: [
                       Expanded(
                         child: ListView.builder(
+                          reverse: true,
                           itemCount: list.length,
                           itemBuilder: (context, index) {
                             name = list[index]['name'].toString();
@@ -131,6 +132,13 @@ class _BuyerOrdersState extends State<BuyerOrders> {
                             return Padding(
                               padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 6),
                               child: Card(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15.0),
+                                  side: BorderSide(
+                                    color: status=='false'? Colors.red:Colors.green, // Border color
+                                    width: 3.0, // Border width
+                                  ),
+                                ),
                                 elevation: 10,
                                 child: Container(
                                   padding: EdgeInsets.all(8.0),
@@ -138,6 +146,7 @@ class _BuyerOrdersState extends State<BuyerOrders> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       ListTile(
+
                                         contentPadding: EdgeInsets.zero,
                                         title: Text(
                                           name!,
@@ -153,19 +162,24 @@ class _BuyerOrdersState extends State<BuyerOrders> {
                                           padding: const EdgeInsets.only(top: 10.0),
                                           child: Column(
                                             children: [
-                                              Text('date is: $date'),
-                                              Text('quantity is: $number')
+                                              Text('Date is: $date',style: TextStyle(color: Colors.black)),
+                                              Text('Quantity is: $number',style: TextStyle(color: Colors.black))
                                             ],
                                           ),
                                         ),
-                                        subtitle: (status == 'false')? Text(
+                                        subtitle: Text(description!,style: TextStyle(color: Colors.black),)
+                                      ),
+                                      (status == 'false')? Center(
+                                        child: Text(
                                           'Order Pending',
                                           style: TextStyle(
                                             fontSize: 14,
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
-                                        ):Text(
+                                        ),
+                                      ):Center(
+                                        child: Text(
                                           'Deliver in 10 to 15 days',
                                           style: TextStyle(
                                             fontSize: 14,

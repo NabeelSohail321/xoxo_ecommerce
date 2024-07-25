@@ -163,7 +163,7 @@ class DashboardCard extends StatefulWidget {
 
 class _DashboardCardState extends State<DashboardCard> {
   final rref = FirebaseDatabase.instance.ref('Ratings');
-  double rating = 3.5;
+  double rating = 0;
   double totalRating = 0;
   int numberOfUsers = 0;
   bool hasRated = false;
@@ -178,13 +178,16 @@ class _DashboardCardState extends State<DashboardCard> {
     final snapshot = await rref.child(widget.pid).get();
     if (snapshot.exists) {
       final data = snapshot.value as Map<dynamic, dynamic>;
+      print("Fetched data: $data"); // Debug print
       setState(() {
         totalRating = double.parse(data['rating'] ?? '0');
         numberOfUsers = int.parse(data['users'] ?? '0');
-        rating = numberOfUsers == 0 ? 3.5 : (totalRating / numberOfUsers);
+        rating = numberOfUsers == 0 ? 0 : (totalRating / numberOfUsers);
+        hasRated = data['ratedBy']?.containsKey(widget.uid) ?? false;
+        print("Total Rating: $totalRating, Number of Users: $numberOfUsers, Calculated Rating: $rating, Has Rated: $hasRated"); // Debug print
       });
     } else {
-      Rating rating = Rating(widget.pid, '3.5', '1');
+      Rating rating = Rating(widget.pid, '0', '0');
       await rref.child(widget.pid).set(rating.tomap());
     }
   }
@@ -198,6 +201,14 @@ class _DashboardCardState extends State<DashboardCard> {
         }, maintainState: true));
       },
       child: Card(
+        color: Colors.grey.shade200,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15.0),
+          side: BorderSide(
+            color: Colors.orangeAccent, // Border color
+            width: 4.0, // Border width
+          ),
+        ),
         margin: EdgeInsets.all(10.0),
         child: Padding(
           padding: const EdgeInsets.all(8.0),
@@ -222,30 +233,36 @@ class _DashboardCardState extends State<DashboardCard> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
                 ),
-                AnimatedRatingStars(
-                  initialRating: rating,
-                  minRating: 0.0,
-                  maxRating: 5.0,
-                  filledColor: Colors.amber,
-                  emptyColor: Colors.grey,
-                  filledIcon: Icons.star,
-                  halfFilledIcon: Icons.star_half,
-                  emptyIcon: Icons.star_border,
-                  onChanged: hasRated
-                      ? (double newRating) {}
-                      : (double newRating) {
-                    _handleRatingChange(newRating);
-                  },
-                  displayRatingValue: true,
-                  interactiveTooltips: true,
-                  customFilledIcon: Icons.star,
-                  customHalfFilledIcon: Icons.star_half,
-                  customEmptyIcon: Icons.star_border,
-                  starSize: 30.0,
-                  animationDuration: Duration(milliseconds: 300),
-                  animationCurve: Curves.easeInOut,
-                  readOnly: hasRated,
-                ),
+                if (rating != 0) ...[
+                  AnimatedRatingStars(
+                    initialRating: rating,
+                    minRating: 0.0,
+                    maxRating: 5.0,
+                    filledColor: Colors.amber,
+                    emptyColor: Colors.grey,
+                    filledIcon: Icons.star,
+                    halfFilledIcon: Icons.star_half,
+                    emptyIcon: Icons.star_border,
+                    onChanged: hasRated
+                        ? (double newRating) {}
+                        : (double newRating) {
+                      print(newRating);
+                      // _getInitialRating();
+                      _handleRatingChange(newRating);
+                    },
+                    displayRatingValue: true,
+                    interactiveTooltips: true,
+                    customFilledIcon: Icons.star,
+                    customHalfFilledIcon: Icons.star_half,
+                    customEmptyIcon: Icons.star_border,
+                    starSize: 30.0,
+                    animationDuration: Duration(milliseconds: 300),
+                    animationCurve: Curves.easeInOut,
+                    readOnly: hasRated,
+                  ),
+                ] else ...[
+                  CircularProgressIndicator(),
+                ],
                 SizedBox(height: 10),
               ],
             ),
@@ -258,6 +275,7 @@ class _DashboardCardState extends State<DashboardCard> {
   void _handleRatingChange(double newRating) {
     setState(() {
       hasRated = true;
+      rating = newRating;
     });
     _updateRating(newRating);
   }
@@ -275,6 +293,7 @@ class _DashboardCardState extends State<DashboardCard> {
       await rref.child(widget.pid).update({
         'users': newNumberOfUsers.toString(),
         'rating': newTotalRating.toString(),
+        'ratedBy/${widget.uid}': true, // Add user to ratedBy list
       });
 
       setState(() {

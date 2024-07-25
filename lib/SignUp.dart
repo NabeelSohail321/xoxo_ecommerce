@@ -128,13 +128,31 @@ class _SignupState extends State<Signup> {
                   ),
                 ),
               ),
+              SizedBox(height: height * 0.06),
               Form(
                 key: _formKey,
                 child: Column(
                   children: [
                     TextFormField(
+
                       controller: _nameController,
-                      decoration: InputDecoration(labelText: "Name"),
+                      decoration: InputDecoration(
+                        labelText: "Name",
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Colors.black12, // Border color when not focused
+                          width: 1.0, // Border width
+                        ),
+                        borderRadius: BorderRadius.circular(10.0),
+                      ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Colors.black12, // Border color when not focused
+                            width: 1.0, // Border width
+                          ),
+                          borderRadius: BorderRadius.circular(10.0),
+                        )
+                      ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your name';
@@ -142,9 +160,26 @@ class _SignupState extends State<Signup> {
                         return null;
                       },
                     ),
+                    SizedBox(height: height * 0.02,),
                     TextFormField(
                       controller: _emailController,
-                      decoration: InputDecoration(labelText: "Email"),
+                      decoration: InputDecoration(
+                          labelText: "Email",
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.black12, // Border color when not focused
+                              width: 1.0, // Border width
+                            ),
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.black12, // Border color when not focused
+                              width: 1.0, // Border width
+                            ),
+                            borderRadius: BorderRadius.circular(10.0),
+                          )
+                      ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your email';
@@ -156,9 +191,26 @@ class _SignupState extends State<Signup> {
                         return null;
                       },
                     ),
+                    SizedBox(height: height * 0.02,),
                     TextFormField(
                       controller: _phoneController,
-                      decoration: InputDecoration(labelText: "Phone Number"),
+                      decoration: InputDecoration(
+                        labelText: "Phone Number",
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.black12, // Border color when not focused
+                              width: 1.0, // Border width
+                            ),
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Colors.black12, // Border color when not focused
+                              width: 1.0, // Border width
+                            ),
+                            borderRadius: BorderRadius.circular(10.0),
+                          )
+                      ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your phone number';
@@ -168,10 +220,25 @@ class _SignupState extends State<Signup> {
                         return null;
                       },
                     ),
+                    SizedBox(height: height * 0.02,),
                     TextFormField(
                       controller: _passwordController,
                       decoration: InputDecoration(
                         labelText: "Password",
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Colors.black12, // Border color when not focused
+                            width: 1.0, // Border width
+                          ),
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Colors.black12, // Border color when not focused
+                            width: 1.0, // Border width
+                          ),
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword
@@ -195,9 +262,24 @@ class _SignupState extends State<Signup> {
                         return null;
                       },
                     ),
+                    SizedBox(height: height * 0.02,),
                     TextFormField(
                       controller: _confirmPasswordController,
                       decoration: InputDecoration(
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Colors.black12, // Border color when not focused
+                            width: 1.0, // Border width
+                          ),
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Colors.black12, // Border color when not focused
+                            width: 1.0, // Border width
+                          ),
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
                         labelText: "Confirm Password",
                         suffixIcon: IconButton(
                           icon: Icon(
