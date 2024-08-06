@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-
+import 'package:xoxo_ecommerce/SellerPages/HomeScreen.dart';
+import 'package:xoxo_ecommerce/SellerPages/OrderDelivered.dart';
+import 'package:xoxo_ecommerce/SellerPages/OrderPending.dart';
 import '../Authentication/Login.dart';
 
 class Orders extends StatefulWidget {
@@ -14,80 +16,28 @@ class Orders extends StatefulWidget {
 }
 
 class _OrdersState extends State<Orders> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  int orderNumber = 0;
+  int pendingNumber = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchOrderNumbers(); // Fetch order numbers when the widget is first built
+  }
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.of(context).size.height;
     final oref = FirebaseDatabase.instance.ref('BuyerOrders');
-
-    String? name;
-    String? description;
-    String? img;
-    String? number;
-    String? price;
-    bool _noDataFound = false;
-    String? status;
-    String? date;
-    String? cid;
-
-    Widget buildCircularProgressIndicator() {
-      return CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-      );
-    }
-
-    Future<void> _AcceptOrders(List<dynamic> list, int index) async {
-      // Ensure list is not empty and index is valid
-      if (list.isNotEmpty && index < list.length) {
-        String cid = list[index]['cid'];
-        String status = list[index]['status'].toString().toLowerCase();
-
-        // Debugging output
-        print("Accepting order with cid: $cid and status: $status");
-
-        if (status == 'false') {
-          // Query to find the order by cid
-          DataSnapshot snapshot = await oref.orderByChild('cid').equalTo(cid).get();
-
-          if (snapshot.exists) {
-            Map<dynamic, dynamic> map1 = snapshot.value as Map<dynamic, dynamic>;
-
-            // Find the key for the order to update
-            String key = map1.keys.firstWhere((k) => map1[k]['cid'] == cid);
-
-            // print(key);
-            await oref.child(key).update({'status': 'true'}).then((value) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Order accepted. ')),
-              );
-            });
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Order not found.')),
-            );
-          }
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Order already accepted.')),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid order.')),
-        );
-      }
-    }
-
+    final height = MediaQuery.of(context).size.height;
+    final FirebaseAuth _auth = FirebaseAuth.instance;
 
     Future<void> _signOut(BuildContext context) async {
       try {
-        await _auth.signOut().then((value) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => Login()), // Navigate to your login screen
-          );
-        });
+        await _auth.signOut();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Login()), // Navigate to your login screen
+        );
       } catch (e) {
         print("Error signing out: $e");
         // Handle sign out error
@@ -108,148 +58,178 @@ class _OrdersState extends State<Orders> {
         centerTitle: true,
         toolbarHeight: height * 0.2,
         actions: [
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: height * 0.08, horizontal: height * 0.01),
-            child: InkWell(
-              onTap: () {
-                _signOut(context);
-              },
-              child: Icon(Icons.logout, size: height * 0.06),
-            ),
-          ),
+          PopupMenuButton(itemBuilder: (context) {
+            return [
+              PopupMenuItem(
+                child: Icon(Icons.logout),
+                onTap: () {
+                  _signOut(context);
+                },
+              ),
+              PopupMenuItem(
+                child: Icon(Icons.home),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) {
+                    return HomeScreen(widget.uid);
+                  }));
+                },
+              )
+            ];
+          }, iconSize: height * 0.04),
+          // Padding(
+          //   padding: EdgeInsets.symmetric(vertical: height * 0.08, horizontal: height * 0.01),
+          //   child: InkWell(
+          //     onTap: () {
+          //       _signOut(context);
+          //     },
+          //     child: Icon(Icons.logout, size: height * 0.06),
+          //   ),
+          // )
         ],
       ),
       body: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          GridView.count(
+            crossAxisCount: 2,
+            padding: EdgeInsets.all(10.0),
+            shrinkWrap: true,
             children: [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8.0),
-                child: Text(
-                  "Order List",
-                  style: TextStyle(
-                    fontSize: height * 0.03,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Ubuntu',
-                  ),
+              InkWell(
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) {
+                    return OrderPending(widget.uid);
+                  }));
+                },
+                child: DashboardCard(
+                  title: 'Pending Orders',
+                  icon: Icons.shopping_bag,
+                  number: pendingNumber.toString(),
                 ),
               ),
-              Icon(Icons.shopping_cart, size: height * 0.03),
+              InkWell(
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) {
+                    return OrderDelivered(widget.uid);
+                  }));
+                },
+                child: DashboardCard(
+                  title: 'Orders Delivered',
+                  icon: Icons.list_alt,
+                  number: orderNumber.toString(),
+                ),
+              ),
             ],
           ),
           Expanded(
-            child: StreamBuilder(
+            child: StreamBuilder<DatabaseEvent>(
               stream: oref.orderByChild('sid').equalTo(widget.uid).onValue,
-              builder: (context, AsyncSnapshot<DatabaseEvent> snapshot) {
-                if (!snapshot.hasData && !_noDataFound) {
-                  return Center(
-                    child: buildCircularProgressIndicator(),
-                  );
-                } else if (snapshot.hasData && snapshot.data!.snapshot.value != null) {
-                  Map<dynamic, dynamic> map = snapshot.data!.snapshot.value as dynamic;
+              builder: (BuildContext context, AsyncSnapshot<DatabaseEvent> snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator()); // Show loading indicator while waiting
+                } else if (snapshot.hasData) {
+                  Map<dynamic, dynamic>? map = snapshot.data!.snapshot.value as Map<dynamic, dynamic>?;
                   if (map == null) {
-                    return Center(child: Text("No Product Found"));
+                    return Center(child: Text("No Data Found")); // Handle case with no data
                   }
-                  List<dynamic> list = map.values.toList();
 
-                  return Column(
-                    children: [
-                      Expanded(
-                        child: ListView.builder(
-                          reverse:  true,
-                          itemCount: list.length,
-                          itemBuilder: (context, index) {
-                            name = list[index]['name'].toString();
-                            description = list[index]['description'].toString();
-                            price = list[index]['price'].toString();
-                            img = list[index]['img'].toString();
-                            number = list[index]['number'].toString();
-                            status = list[index]['status'].toString().toLowerCase();
-                            date = list[index]['date'];
-                            cid = list[index]['cid'];
+                  List<dynamic> list = [];
+                  list.clear();
+                  list=map.values.toList();
 
-                            // print(list);
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 6),
-                              child: Card(
-                                elevation: 10,
-                                child: Container(
+                  int tempOrderNumber = 0;
+                  int tempPendingNumber = 0;
 
-                                  height: status == 'false' ?height * 0.17: height*0.15,
-                                  padding: EdgeInsets.all(8.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      ListTile(
-                                        contentPadding: EdgeInsets.zero,
-                                        title: Text(
-                                          name!,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        leading: CircleAvatar(
-                                          radius: 30,
-                                          backgroundImage: NetworkImage(img!),
-                                        ),
-                                        trailing: Padding(
-                                          padding: EdgeInsets.only(top: height * 0.01),
-                                          child: Column(
-                                            children: [
-                                              Text('date is: $date'),
-                                              Text('quantity is: $number'),
-                                            ],
-                                          ),
-                                        ),
-                                        subtitle: (status == 'false')
-                                            ? Text(
-                                          'Order Pending',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
-                                        )
-                                            : (status=='true')? Text(
-                                          'Accepted',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
-                                        ):Text(
-                                          'Delivered',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
-                                        )
-                                      ),
-                                      status == 'false'?
-                                      ElevatedButton(
-                                          onPressed: () async {
-                                            await _AcceptOrders(list,index);
-                                          },
-                                          child: Text('Accept')):(status=='true')?Text('Will be delivered in 10 to 15 days'):Text('delivered')
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  );
+                  list.forEach((order) {
+                    String status = order['status'].toString().toLowerCase();
+                    if (status == 'false') {
+                      tempPendingNumber++;
+                    } else if (status == 'deliver') {
+                      tempOrderNumber++;
+                    }
+                  });
+
+                  if (orderNumber != tempOrderNumber || pendingNumber != tempPendingNumber) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      setState(() {
+                        orderNumber = tempOrderNumber;
+                        pendingNumber = tempPendingNumber;
+                      });
+                    });
+                  }
+
+                  return Container(); // Replace with your content or additional UI components
                 } else {
-                  return Center(child: Text("No Product Found"));
+                  return Center(child: Text("Error loading data")); // Handle unexpected error
                 }
               },
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _fetchOrderNumbers() async {
+    final oref = FirebaseDatabase.instance.ref('BuyerOrders');
+    final snapshot = await oref.orderByChild('sid').equalTo(widget.uid).once();
+    Map<dynamic, dynamic>? map = snapshot.snapshot.value as Map<dynamic, dynamic>?;
+    if (map != null) {
+      List<dynamic> list = map.values.toList();
+
+      int tempOrderNumber = 0;
+      int tempPendingNumber = 0;
+
+      list.forEach((order) {
+        String status = order['status'].toString().toLowerCase();
+        if (status == 'false') {
+          tempPendingNumber++;
+        } else if (status == 'deliver') {
+          tempOrderNumber++;
+        }
+      });
+
+      setState(() {
+        orderNumber = tempOrderNumber;
+        pendingNumber = tempPendingNumber;
+      });
+    }
+  }
+}
+
+class DashboardCard extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final String number;
+
+  DashboardCard({required this.title, required this.icon, required this.number});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.all(10.0),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 50.0,
+              color: Colors.blue,
+            ),
+            SizedBox(height: 10.0),
+            Text(
+              title,
+              style: TextStyle(fontSize: 18.0),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 10.0),
+            Text(
+              number,
+              style: TextStyle(fontSize: 18.0, color: Colors.black),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

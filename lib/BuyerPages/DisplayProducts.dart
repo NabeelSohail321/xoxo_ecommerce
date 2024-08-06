@@ -23,7 +23,7 @@ class _DisplayState extends State<Display> {
   final rref = FirebaseDatabase.instance.ref('Ratings');
 
   String? pid;
-
+  String category='clothe';
   Future<void> _signOut(BuildContext context) async {
     try {
       await _auth.signOut().then((value) {
@@ -98,6 +98,44 @@ class _DisplayState extends State<Display> {
               ),
             ],
           ),
+          SizedBox(height: 20,),
+          Container(
+            width: MediaQuery.of(context).size.width*0.5,
+            child: PopupMenuButton<String>(
+              initialValue: category, // Set initial value here
+              onSelected: (String value) {
+                setState(() {
+                  category = value;
+                });
+              },
+              itemBuilder: (BuildContext context) =>
+              <PopupMenuEntry<String>>[
+                const PopupMenuItem<String>(
+                  value: 'clothe',
+                  child: Text('Clothes'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'electronics',
+                  child: Text('Electronics'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'appliances',
+                  child: Text('Appliances'),
+                ),
+              ],
+              child: ListTile(
+                title: Text('Category'),
+                trailing: Text(
+                  category == 'clothe'
+                      ? 'Clothes'
+                      : category == 'electronics'
+                      ? 'Electronics'
+                      : 'Applpiances',
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 20,),
           Expanded(
             child: StreamBuilder(
               stream: dref.onValue,
@@ -119,15 +157,17 @@ class _DisplayState extends State<Display> {
                   List<dynamic>? list = [];
                   list.clear();
                   list = map.values.toList();
+                  List<dynamic> list1 = list.where((element) => element['category'].toString().toLowerCase() == category.toLowerCase()).toList();
+
 
                   return GridView.extent(
-                    maxCrossAxisExtent: 400,
-                    children: List.generate(list.length, (index) {
-                      pid = list![index]['pid'];
+                    maxCrossAxisExtent: 500,
+                    children: List.generate(list1.length, (index) {
+                      pid = list1![index]['pid'];
                       return DashboardCard(
-                        title: list[index]['name'],
-                        img: list[index]['img'],
-                        description: list[index]['description'],
+                        title: list1[index]['name'],
+                        img: list1[index]['img'],
+                        description: list1[index]['description'],
                         uid: widget.uid,
                         pid: pid!,
                       );
@@ -180,15 +220,18 @@ class _DashboardCardState extends State<DashboardCard> {
       final data = snapshot.value as Map<dynamic, dynamic>;
       print("Fetched data: $data"); // Debug print
       setState(() {
-        totalRating = double.parse(data['rating'] ?? '0');
-        numberOfUsers = int.parse(data['users'] ?? '0');
+        totalRating = double.parse(data['rating'] ?? '3.5');
+        numberOfUsers = int.parse(data['users'] ?? '1');
         rating = numberOfUsers == 0 ? 0 : (totalRating / numberOfUsers);
         hasRated = data['ratedBy']?.containsKey(widget.uid) ?? false;
         print("Total Rating: $totalRating, Number of Users: $numberOfUsers, Calculated Rating: $rating, Has Rated: $hasRated"); // Debug print
       });
     } else {
-      Rating rating = Rating(widget.pid, '0', '0');
-      await rref.child(widget.pid).set(rating.tomap());
+      // Rating rating1 = Rating(widget.pid, '3.5', '1');
+      // await rref.child(widget.pid).set(rating1.tomap());
+      setState(() {
+        rating = 3.5;
+      });
     }
   }
 

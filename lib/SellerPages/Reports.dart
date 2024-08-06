@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 import '../Authentication/Login.dart';
+import 'HomeScreen.dart';
 
 class Reports extends StatefulWidget {
   final String uid;
@@ -18,7 +19,7 @@ class Reports extends StatefulWidget {
 class _ReportsState extends State<Reports> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final DatabaseReference _databaseRef = FirebaseDatabase.instance.ref("BuyerOrders");
-
+  final DatabaseReference _productRef = FirebaseDatabase.instance.ref("Products");
   DateTime? _startDate;
   DateTime? _endDate;
 
@@ -29,10 +30,19 @@ class _ReportsState extends State<Reports> {
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
 
-    double _calculateTotal(List<dynamic> list) {
+    Future<double> _calculateTotal(List<dynamic> list) async {
       double total = 0;
       for (var node in list) {
-        total += (double.parse(node['price']) - double.parse(node['buying'])) * int.parse(node['number']);
+        String pid = node['pid'];
+        double buyingPrice = 0;
+
+        await _productRef.child(pid).get().then((DataSnapshot snapshot) {
+          if (snapshot.exists) {
+            buyingPrice = double.parse(snapshot.child('buying').value.toString());
+          }
+        });
+
+        total += (double.parse(node['price']) - buyingPrice) * int.parse(node['number']);
       }
       return total;
     }
@@ -52,7 +62,11 @@ class _ReportsState extends State<Reports> {
     }
 
     if (_filteredData.isNotEmpty) {
-      profitloss = _calculateTotal(_filteredData);
+      _calculateTotal(_filteredData).then((value) {
+        setState(() {
+          profitloss = value;
+        });
+      });
     }
 
     return Scaffold(
@@ -69,15 +83,24 @@ class _ReportsState extends State<Reports> {
         centerTitle: true,
         toolbarHeight: height * 0.1,
         actions: [
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: height * 0.02, horizontal: height * 0.01),
-            child: InkWell(
-              onTap: () {
-                _signOut(context);
-              },
-              child: Icon(Icons.logout, size: height * 0.03),
-            ),
-          ),
+          PopupMenuButton(itemBuilder: (context) {
+            return [
+              PopupMenuItem(
+                child: Icon(Icons.logout),
+                onTap: () {
+                  _signOut(context);
+                },
+              ),
+              PopupMenuItem(
+                child: Icon(Icons.home),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) {
+                    return HomeScreen(widget.uid);
+                  }));
+                },
+              )
+            ];
+          }, iconSize: height * 0.04),
         ],
       ),
       body: Padding(
@@ -217,7 +240,7 @@ class _ReportsState extends State<Reports> {
                               ),
                               subtitle: Text(
                                 description,
-                                style: TextStyle(color: Colors.black, fontSize: height * 0.017),
+                                style: TextStyle(color: Colors.black, fontSize: height * 0.017, overflow: TextOverflow.ellipsis),
                               ),
                             ),
                             Center(
@@ -298,7 +321,7 @@ class _ReportsState extends State<Reports> {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: SizedBox(
-        height: 200,
+        height: MediaQuery.of(context).size.height*0.3,
         child: LineChart(
           LineChartData(
             gridData: FlGridData(

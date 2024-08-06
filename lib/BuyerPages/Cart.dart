@@ -1,5 +1,4 @@
-import 'dart:math';
-
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +17,8 @@ class _cartState extends State<cart> {
   final cref = FirebaseDatabase.instance.ref('Cart');
   final oref = FirebaseDatabase.instance.ref('BuyerOrders');
   final pref = FirebaseDatabase.instance.ref('Products');
+  final userRef = FirebaseDatabase.instance.ref('User');
+  String? phone;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   bool _noDataFound = false;
@@ -29,6 +30,7 @@ class _cartState extends State<cart> {
   String? price;
   String? pid;
   String? date;
+  List<Map<String, String>> quantity = [];
 
   Future<void> _signOut(BuildContext context) async {
     try {
@@ -44,6 +46,15 @@ class _cartState extends State<cart> {
     }
   }
 
+  Future<String?> getUserPhone(String userId) async {
+    final snapshot = await userRef.child(userId).get();
+    if (snapshot.exists) {
+      final data = snapshot.value as Map<dynamic, dynamic>;
+      return data['phone'] as String?;
+    }
+    return null;
+  }
+
   double _calculateTotal(List<dynamic> list) {
     double total = 0;
     for (var node in list) {
@@ -53,24 +64,42 @@ class _cartState extends State<cart> {
   }
 
   Future<void> _updateQuantity(String number, String pid) async {
-    DataSnapshot snapshot = await pref.orderByChild('pid').equalTo(pid).get();
+    DataSnapshot snapshot = await pref.child(pid).get();
 
     if (snapshot.exists) {
       Map<dynamic, dynamic> map1 = snapshot.value as Map<dynamic, dynamic>;
-      List<dynamic> list1 = map1.values.toList();
 
-      for (var item in list1) {
-        String quantity = item['quantity'].toString();
-        if ((int.parse(quantity) - int.parse(number)) > 0) {
-          await pref.child(pid).update({
-            'quantity': (int.parse(quantity) - int.parse(number)).toString()
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Quantity updated.')),
-          );
-        }
+      String quantity = map1['quantity'].toString();
+      if ((int.parse(quantity) - int.parse(number)) > 0) {
+        await pref.child(pid).update({
+          'quantity': (int.parse(quantity) - int.parse(number)).toString()
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Quantity updated.')),
+        );
       }
     }
+  }
+
+  Future<void> _removeFromCart(String uid, String pid) async {
+    await cref.child(uid).child(pid).remove();
+    setState(() {
+      quantity.removeWhere((item) => item['pid'] == pid);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Product removed from cart.')),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    getUserPhone(widget.uid).then((fetchedPhone) {
+      setState(() {
+        phone = fetchedPhone;
+      });
+    });
   }
 
   @override
@@ -123,9 +152,9 @@ class _cartState extends State<cart> {
           ),
           Expanded(
             child: StreamBuilder(
-              stream: cref.child(widget.uid).orderByChild('uid').equalTo(widget.uid).onValue,
+              stream: cref.child(widget.uid).onValue,
               builder: (context, AsyncSnapshot<DatabaseEvent> snapshot) {
-                if (!snapshot.hasData && !_noDataFound) {
+                if (!snapshot.hasData) {
                   return Center(
                     child: buildCircularProgressIndicator(),
                   );
@@ -137,6 +166,13 @@ class _cartState extends State<cart> {
                   List<dynamic> list = map.values.toList();
 
                   calculatedTotal = _calculateTotal(list);
+
+                  quantity = list.map((item) {
+                    return {
+                      'number': item['number'].toString(),
+                      'pid': item['pid'].toString(),
+                    };
+                  }).toList();
 
                   return Column(
                     children: [
@@ -151,8 +187,6 @@ class _cartState extends State<cart> {
                             number = list[index]['number'].toString();
                             date = list[index]['date'];
                             pid = list[index]['pid'];
-
-                            _updateQuantity(number!, pid!);
 
                             return Padding(
                               padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 6),
@@ -180,7 +214,7 @@ class _cartState extends State<cart> {
                                           child: Column(
                                             children: [
                                               Text('Date: $date'),
-                                              Text('Quantity: $number')
+                                              Text('Quantity: $number'),
                                             ],
                                           ),
                                         ),
@@ -193,6 +227,14 @@ class _cartState extends State<cart> {
                                           overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
                                         ),
                                       ),
+                                      Center(
+                                        child: IconButton(
+                                          icon: Icon(Icons.delete),
+                                          onPressed: () {
+                                            _removeFromCart(widget.uid, pid!);
+                                          },
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -203,7 +245,7 @@ class _cartState extends State<cart> {
                       ),
                       Center(
                         child: Text(
-                          'Total Bill: ${calculatedTotal}',
+                          'Total Bill: $calculatedTotal',
                           style: TextStyle(fontSize: height * 0.03, fontWeight: FontWeight.bold),
                         ),
                       ),
@@ -222,8 +264,12 @@ class _cartState extends State<cart> {
         width: 70,
         child: FloatingActionButton(
           onPressed: () async {
+            for (var item in quantity) {
+              await _updateQuantity(item['number']!, item['pid']!);
+            }
+
             final DatabaseService dbService = DatabaseService();
-            dbService.moveData('Cart/${widget.uid}', 'BuyerOrders', {'status': 'false'}).then((value) {
+            dbService.moveData('Cart/${widget.uid}', 'BuyerOrders', {'status': 'false', 'phone': phone}).then((value) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Order placed successfully')),
               );

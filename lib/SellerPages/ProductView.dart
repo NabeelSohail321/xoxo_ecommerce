@@ -3,6 +3,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../Authentication/Login.dart';
@@ -308,6 +309,10 @@ class _ProductViewState extends State<ProductView> {
                                             children: [
                                               TextField(
                                                 controller: _quantitycontroller,
+                                                keyboardType: TextInputType.number,
+                                                inputFormatters: [
+                                                  FilteringTextInputFormatter.digitsOnly
+                                                ],
                                                 decoration: InputDecoration(
                                                   hintText: 'Enter quantity',
                                                   labelText: 'quantity',
@@ -358,6 +363,10 @@ class _ProductViewState extends State<ProductView> {
                                             children: [
                                               TextField(
                                                 controller: _sellingcontroller,
+                                                keyboardType: TextInputType.number,
+                                                inputFormatters: [
+                                                  FilteringTextInputFormatter.digitsOnly
+                                                ],
                                                 decoration: InputDecoration(
                                                   hintText: 'Enter selling price',
                                                   labelText: 'Price',
@@ -408,6 +417,10 @@ class _ProductViewState extends State<ProductView> {
                                             children: [
                                               TextField(
                                                 controller: _buyingcontroller,
+                                                keyboardType: TextInputType.number,
+                                                inputFormatters: [
+                                                  FilteringTextInputFormatter.digitsOnly
+                                                ],
                                                 decoration: InputDecoration(
                                                   hintText: 'Enter Buying price',
                                                   labelText: 'Price',

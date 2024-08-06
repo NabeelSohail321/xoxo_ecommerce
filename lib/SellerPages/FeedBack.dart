@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../Authentication/Login.dart';
 import '../models/Rating.dart';
+import 'HomeScreen.dart';
 
 class FeedBack extends StatefulWidget {
   String uid;
@@ -76,15 +77,34 @@ class _FeedBackState extends State<FeedBack> {
         centerTitle: true,
         toolbarHeight: height * 0.2,
         actions: [
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: height * 0.08, horizontal: height * 0.01),
-            child: InkWell(
-              onTap: () {
-                _signOut(context);
-              },
-              child: Icon(Icons.logout, size: height * 0.06),
-            ),
-          ),
+          // Padding(
+          //   padding: EdgeInsets.symmetric(vertical: height * 0.08, horizontal: height * 0.01),
+          //   child: InkWell(
+          //     onTap: () {
+          //       _signOut(context);
+          //     },
+          //     child: Icon(Icons.logout, size: height * 0.06),
+          //   ),
+          // ),
+          PopupMenuButton(itemBuilder: (context) {
+            return [
+              PopupMenuItem(
+                child: Icon(Icons.logout),
+                onTap: () {
+                  _signOut(context);
+                },
+              ),
+              PopupMenuItem(
+                child: Icon(Icons.home),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) {
+                    return HomeScreen(widget.uid);
+                  }));
+                },
+              )
+            ];
+          }, iconSize: height * 0.04),
+
         ],
       ),
       body: Column(

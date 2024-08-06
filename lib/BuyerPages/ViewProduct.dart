@@ -3,7 +3,6 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:xoxo_ecommerce/models/cart.dart';
-
 import '../Authentication/Login.dart';
 
 class viewProduct extends StatefulWidget {
@@ -25,11 +24,8 @@ class _viewProductState extends State<viewProduct> {
   String? quantity;
   String? img;
   String? sid;
-  int number = 0;
+  int selectedQuantity = 1; // Default quantity
   String? buying;
-
-
-
 
   Future<void> _signOut(BuildContext context) async {
     try {
@@ -135,8 +131,40 @@ class _viewProductState extends State<viewProduct> {
                                     fontSize: 20, fontFamily: 'Ubuntu'),
                               ),
                             ),
-                            Text('price : $price'),
-                            Text('Quantity : $quantity')
+                            Text('Price : $price'),
+                            Text('Available Quantity : $quantity'),
+                            Padding(
+                              padding: EdgeInsets.symmetric(vertical: 20.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(Icons.remove),
+                                    onPressed: () {
+                                      setState(() {
+                                        if (selectedQuantity > 1) {
+                                          selectedQuantity--;
+                                        }
+                                      });
+                                    },
+                                  ),
+                                  Text(
+                                    '$selectedQuantity',
+                                    style: TextStyle(fontSize: 18),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.add),
+                                    onPressed: () {
+                                      setState(() {
+                                        if (selectedQuantity < int.parse(quantity!)) {
+                                          selectedQuantity++;
+                                        }
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       );
@@ -158,24 +186,29 @@ class _viewProductState extends State<viewProduct> {
             cref.child(widget.uid).child(widget.pid).once().then((DatabaseEvent event) async {
               if (event.snapshot.exists) {
                 // Product already in the cart, update the quantity
-                Map<dynamic, dynamic> cartData = event.snapshot.value as Map<dynamic, dynamic>;
-                int currentNumber = int.parse(cartData['number']);
-                int newNumber = currentNumber + 1;
+                // Map<dynamic, dynamic> cartData = event.snapshot.value as Map<dynamic, dynamic>;
+                // int currentNumber = int.parse(cartData['number']);
+                // int newNumber = currentNumber + selectedQuantity;
+                //
+                // if (newNumber <= int.parse(quantity!)) {
+                //   await cref.child('${widget.uid}/${widget.pid}').update({'number': newNumber.toString()}).then((_) {
+                //     ScaffoldMessenger.of(context).showSnackBar(
+                //       SnackBar(content: Text('Cart Updated')),
+                //     );
+                //   });
+                // } else {
+                //   ScaffoldMessenger.of(context).showSnackBar(
+                //     SnackBar(content: Text('Not enough quantity available')),
+                //   );
+                // }
 
-                if (newNumber < int.parse(quantity!)) {
-                  await cref.child('${widget.uid}/${widget.pid}').update({'number': newNumber.toString()}).then((_) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Cart Updated')),
-                    );
-                  });
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Not enough quantity available')),
-                  );
-                }
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Product Already in the Cart')),
+                );
               } else {
                 // Product not in the cart, add it
-                if (int.parse(quantity!) > 0) {
+                if (selectedQuantity <= int.parse(quantity!)) {
                   String id = cref.push().key.toString();
                   cart Cart = cart(
                       id,
@@ -186,13 +219,13 @@ class _viewProductState extends State<viewProduct> {
                       price!,
                       sid!,
                       img!,
-                      '1',
-                    formattedDate,
-                    buying!
+                      selectedQuantity.toString(),
+                      formattedDate,
+                      buying!
                   );
                   await cref.child(widget.uid).child(widget.pid).set(Cart.tomap()).then((_) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Cart Updated')),
+                      SnackBar(content: Text('Added to Cart')),
                     );
                   });
                 } else {
