@@ -1,12 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../Authentication/Login.dart';
 import 'HomeScreen.dart';
 
 class OrderDelivered extends StatefulWidget {
-  String uid;
+  final String uid;
 
   OrderDelivered(this.uid);
 
@@ -16,72 +18,96 @@ class OrderDelivered extends StatefulWidget {
 
 class _OrderDeliveredState extends State<OrderDelivered> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  @override
+  final _formKey = GlobalKey<FormState>();
+  String? phone;
+  DateTime? selectedDate;
 
+  final TextEditingController _phoneController = TextEditingController();
+
+  Widget buildCircularProgressIndicator() {
+    return CircularProgressIndicator(
+      valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+    );
+  }
+
+  Future<void> _signOut(BuildContext context) async {
+    try {
+      await _auth.signOut();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => Login()),
+            (Route<dynamic> route) => false, // Remove all previous routes
+      );
+    } catch (e) {
+      print("Error signing out: $e");
+      // Handle sign out error
+    }
+  }
+
+  Future<void> _changeDate(String cid) async {
+    if (selectedDate != null) {
+      // Format the date with both date and time
+      final formattedDate = DateFormat('yyyy-MM-dd – HH:mm').format(selectedDate!);
+      final oref = FirebaseDatabase.instance.ref('BuyerOrders');
+      print(cid);
+      await oref.child(cid).update({'date': formattedDate}).then((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Date Updated')),
+        );
+      }).catchError((error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update date: $error')),
+        );
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a date')),
+      );
+    }
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (pickedDate != null && pickedDate != selectedDate) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(selectedDate ?? DateTime.now()),
+      );
+      if (pickedTime != null) {
+        setState(() {
+          selectedDate = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+        });
+      }
+    }
+  }
+
+  Future<String?> _findKeyForCid(String cid) async {
+    final ref = FirebaseDatabase.instance.ref('BuyerOrders');
+    final snapshot = await ref.orderByChild('cid').equalTo(cid).once();
+
+    if (snapshot.snapshot.exists) {
+      final data = snapshot.snapshot.value as Map<dynamic, dynamic>;
+      final key = data.keys.first; // Get the first key from the snapshot
+      return key;
+    }
+    return null; // Return null if no matching key is found
+  }
+
+  @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
     final oref = FirebaseDatabase.instance.ref('BuyerOrders');
-
-    Widget buildCircularProgressIndicator() {
-      return CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-      );
-    }
-
-    Future<void> _AcceptOrders(List<dynamic> list, int index) async {
-      // Ensure list is not empty and index is valid
-      if (list.isNotEmpty && index < list.length) {
-        String cid = list[index]['cid'];
-        String status = list[index]['status'].toString().toLowerCase();
-
-        // Debugging output
-        print("Accepting order with cid: $cid and status: $status");
-
-        if (status == 'false') {
-          // Query to find the order by cid
-          DataSnapshot snapshot = await oref.orderByChild('cid').equalTo(cid).get();
-
-          if (snapshot.exists) {
-            Map<dynamic, dynamic> map1 = snapshot.value as Map<dynamic, dynamic>;
-
-            // Find the key for the order to update
-            String key = map1.keys.firstWhere((k) => map1[k]['cid'] == cid);
-
-            await oref.child(key).update({'status': 'true'}).then((value) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Order accepted.')),
-              );
-            });
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Order not found.')),
-            );
-          }
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Order already accepted.')),
-          );
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid order.')),
-        );
-      }
-    }
-
-    Future<void> _signOut(BuildContext context) async {
-      try {
-        await _auth.signOut().then((value) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => Login()), // Navigate to your login screen
-          );
-        });
-      } catch (e) {
-        print("Error signing out: $e");
-        // Handle sign out error
-      }
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -97,34 +123,27 @@ class _OrderDeliveredState extends State<OrderDelivered> {
         centerTitle: true,
         toolbarHeight: height * 0.2,
         actions: [
-          // Padding(
-          //   padding: EdgeInsets.symmetric(vertical: height * 0.08, horizontal: height * 0.01),
-          //   child: InkWell(
-          //     onTap: () {
-          //       _signOut(context);
-          //     },
-          //     child: Icon(Icons.logout, size: height * 0.06),
-          //   ),
-          // ),
-          PopupMenuButton(itemBuilder: (context) {
-            return [
-              PopupMenuItem(
-                child: Icon(Icons.logout),
-                onTap: () {
-                  _signOut(context);
-                },
-              ),
-              PopupMenuItem(
-                child: Icon(Icons.home),
-                onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) {
-                    return HomeScreen(widget.uid);
-                  }));
-                },
-              )
-            ];
-          }, iconSize: height * 0.04),
-
+          PopupMenuButton(
+            itemBuilder: (context) {
+              return [
+                PopupMenuItem(
+                  child: Icon(Icons.logout),
+                  onTap: () {
+                    _signOut(context);
+                  },
+                ),
+                PopupMenuItem(
+                  child: Icon(Icons.home),
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) {
+                      return HomeScreen(widget.uid);
+                    }));
+                  },
+                )
+              ];
+            },
+            iconSize: height * 0.04,
+          ),
         ],
       ),
       body: Column(
@@ -135,7 +154,7 @@ class _OrderDeliveredState extends State<OrderDelivered> {
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8.0),
                 child: Text(
-                  " Order Delivered",
+                  "Order Delivered",
                   style: TextStyle(
                     fontSize: height * 0.03,
                     fontWeight: FontWeight.bold,
@@ -146,6 +165,67 @@ class _OrderDeliveredState extends State<OrderDelivered> {
               Icon(Icons.shopping_cart, size: height * 0.03),
             ],
           ),
+          SizedBox(height: 15),
+          Form(
+            key: _formKey,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: height * 0.05),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _phoneController,
+                      decoration: InputDecoration(
+                        labelText: "Phone Number",
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Colors.black12,
+                            width: 1.0,
+                          ),
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Colors.black12,
+                            width: 1.0,
+                          ),
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter your phone number';
+                        } else if (!RegExp(r'^\+92\d{10}$').hasMatch(value)) {
+                          return 'Please enter a valid phone number in the format +92 3XXXXXXXXX';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        setState(() {
+                          phone = _phoneController.text;
+                        });
+                      }
+                    },
+                    icon: Icon(Icons.search_outlined),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        phone = null;
+                        _phoneController.clear();
+                      });
+                    },
+                    icon: Icon(Icons.cancel_rounded),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: 15),
           Expanded(
             child: StreamBuilder(
               stream: oref.orderByChild('sid').equalTo(widget.uid).onValue,
@@ -153,33 +233,27 @@ class _OrderDeliveredState extends State<OrderDelivered> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: buildCircularProgressIndicator());
                 } else if (snapshot.hasData && snapshot.data!.snapshot.value != null) {
-                  Map<dynamic, dynamic> map = snapshot.data!.snapshot.value as dynamic;
+                  Map<dynamic, dynamic> map = snapshot.data!.snapshot.value as Map<dynamic, dynamic>;
                   List<dynamic> list = map.values.toList();
                   List<dynamic> pendingList = list.where((element) => element['status'].toString().toLowerCase() == 'deliver').toList();
+                  List<dynamic> searchList = phone == null
+                      ? pendingList
+                      : pendingList.where((element) => element['phone'].toString() == phone).toList();
 
-                  if (pendingList.isEmpty) {
+                  if (searchList.isEmpty) {
                     return Center(child: Text("No Product Found"));
                   }
 
                   return ListView.builder(
-                    // reverse: true,
-                    itemCount: pendingList.length,
+                    itemCount: searchList.length,
                     itemBuilder: (context, index) {
-                      String name = pendingList[index]['name'].toString();
-                      String description = pendingList[index]['description'].toString();
-                      String price = pendingList[index]['price'].toString();
-                      String img = pendingList[index]['img'].toString();
-                      String number = pendingList[index]['number'].toString();
-                      String status = pendingList[index]['status'].toString().toLowerCase();
-                      String date = pendingList[index]['date'];
-                      String cid = pendingList[index]['cid'];
-
+                      var order = searchList[index];
                       return Padding(
                         padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 6),
                         child: Card(
                           elevation: 10,
                           child: Container(
-                            height: height * 0.1,
+                            height: phone != null ? height * 0.17 : height * 0.12,
                             padding: EdgeInsets.all(8.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.center,
@@ -187,39 +261,53 @@ class _OrderDeliveredState extends State<OrderDelivered> {
                                 ListTile(
                                   contentPadding: EdgeInsets.zero,
                                   title: Text(
-                                    name,
+                                    order['name'].toString(),
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   leading: CircleAvatar(
                                     radius: 30,
-                                    backgroundImage: NetworkImage(img),
+                                    backgroundImage: NetworkImage(order['img'].toString()),
                                   ),
                                   trailing: Padding(
                                     padding: EdgeInsets.only(top: height * 0.01),
                                     child: Column(
                                       children: [
-                                        Text('date is: $date'),
-                                        Text('quantity is: $number'),
+                                        Text('Date: ${order['date']}'),
+                                        Text('Quantity: ${order['number']}'),
                                       ],
                                     ),
                                   ),
                                   subtitle: Text(
-                                    'Order Delivered',
+                                    'Order Delivered\nPhone number: ${order['phone']}',
                                     style: TextStyle(
                                       fontSize: 14,
                                     ),
                                     maxLines: 1,
-                                    overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                // ElevatedButton(
-                                //   onPressed: () async {
-                                //     await _AcceptOrders(pendingList, index);
-                                //   },
-                                //   child: Text('Accept'),
-                                // ),
+                                if (phone != null)
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      onPressed: () async {
+                                        await _selectDate(context);
+                                        if (selectedDate != null) {
+                                          final cid = order['cid'];
+                                          final key = await _findKeyForCid(cid);
+                                          if (key != null) {
+                                            await _changeDate(key); // Use the found key here
+                                          } else {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text('Key not found for cid $cid')),
+                                            );
+                                          }
+                                        }
+                                      },
+                                      child: Text('Change Date'),
+                                    ),
+                                  ),
                               ],
                             ),
                           ),

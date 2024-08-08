@@ -13,6 +13,7 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
+  bool status = false;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -138,9 +139,13 @@ class _LoginState extends State<Login> {
                   ),
                 ),
                 SizedBox(height: height * 0.02),
-                ElevatedButton(
+                status == false? ElevatedButton(
                   onPressed: () async {
+
                     if (_formKey.currentState!.validate()) {
+                      setState(() {
+                        status=true;
+                      });
                       try {
                         UserCredential userCredential =
                         await _auth.signInWithEmailAndPassword(
@@ -192,8 +197,8 @@ class _LoginState extends State<Login> {
                       }
                     }
                   },
-                  child: Text('Login'),
-                ),
+                  child:  Text('Login'),
+                ):CircularProgressIndicator(),
               ],
             ),
           ),

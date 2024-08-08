@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import '../Authentication/Login.dart';
 import 'HomeScreen.dart';
@@ -72,12 +73,12 @@ class _OrderPendingState extends State<OrderPending> {
 
     Future<void> _signOut(BuildContext context) async {
       try {
-        await _auth.signOut().then((value) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => Login()), // Navigate to your login screen
-          );
-        });
+        await _auth.signOut();
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => Login()),
+              (Route<dynamic> route) => false, // Remove all previous routes
+        );
       } catch (e) {
         print("Error signing out: $e");
         // Handle sign out error
@@ -179,49 +180,53 @@ class _OrderPendingState extends State<OrderPending> {
                         padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 6),
                         child: Card(
                           elevation: 10,
-                          child: Container(
-                            height: height * 0.17,
-                            padding: EdgeInsets.all(8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  title: Text(
-                                    name,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
+                          child: Expanded(
+                            child: Container(
+                              height: height * 0.17,
+                              padding: EdgeInsets.all(8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    title: Text(
+                                      name,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    leading: CircleAvatar(
+                                      radius: 30,
+                                      backgroundImage: NetworkImage(img),
+                                    ),
+                                    trailing: Padding(
+                                      padding: EdgeInsets.only(top: height * 0.01),
+                                      child: Column(
+                                        children: [
+                                          Text('date is: $date'),
+                                          Text('quantity is: $number'),
+                                        ],
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      'Order Pending',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
                                     ),
                                   ),
-                                  leading: CircleAvatar(
-                                    radius: 30,
-                                    backgroundImage: NetworkImage(img),
-                                  ),
-                                  trailing: Padding(
-                                    padding: EdgeInsets.only(top: height * 0.01),
-                                    child: Column(
-                                      children: [
-                                        Text('date is: $date'),
-                                        Text('quantity is: $number'),
-                                      ],
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      onPressed: () async {
+                                        await _AcceptOrders(pendingList, index);
+                                      },
+                                      child: Text('Accept'),
                                     ),
                                   ),
-                                  subtitle: Text(
-                                    'Order Pending',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
-                                  ),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () async {
-                                    await _AcceptOrders(pendingList, index);
-                                  },
-                                  child: Text('Accept'),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),

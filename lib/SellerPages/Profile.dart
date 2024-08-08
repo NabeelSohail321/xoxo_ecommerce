@@ -55,9 +55,10 @@ class _ProfileState extends State<Profile> {
   Future<void> _signOut(BuildContext context) async {
     try {
       await _auth.signOut();
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => Login()), // Navigate to your login screen
+        MaterialPageRoute(builder: (context) => Login()),
+            (Route<dynamic> route) => false, // Remove all previous routes
       );
     } catch (e) {
       print("Error signing out: $e");

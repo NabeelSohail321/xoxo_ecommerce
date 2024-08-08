@@ -3,7 +3,13 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
-
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:open_file/open_file.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:flutter/services.dart' show ByteData, rootBundle;
 import '../Authentication/Login.dart';
 import 'HomeScreen.dart';
 
@@ -23,6 +29,10 @@ class _ReportsState extends State<Reports> {
   DateTime? _startDate;
   DateTime? _endDate;
 
+  int totalNumber=0;
+  double buyingprice=0;
+  double sellingprice=0;
+
   double? profitloss;
   List<Map<dynamic, dynamic>> _filteredData = [];
 
@@ -32,33 +42,138 @@ class _ReportsState extends State<Reports> {
 
     Future<double> _calculateTotal(List<dynamic> list) async {
       double total = 0;
+      double buyingPrice1 = 0;
+      double buyingPrice2 = 0;
+      double sellingprice1=0;
+      int totalproducts=0;
+
       for (var node in list) {
         String pid = node['pid'];
-        double buyingPrice = 0;
 
         await _productRef.child(pid).get().then((DataSnapshot snapshot) {
           if (snapshot.exists) {
-            buyingPrice = double.parse(snapshot.child('buying').value.toString());
+            buyingPrice2 = double.parse(snapshot.child('buying').value.toString());
+            buyingPrice1  += (double.parse(snapshot.child('buying').value.toString())*int.parse(node['number']));
           }
         });
 
-        total += (double.parse(node['price']) - buyingPrice) * int.parse(node['number']);
+
+        totalproducts += int.parse(node['number']);
+        sellingprice1 += (double.parse(node['price'])*int.parse(node['number']));
+        total += (double.parse(node['price']) - buyingPrice2) * int.parse(node['number']);
       }
+      setState(() {
+        totalNumber=totalproducts;
+
+        buyingprice=buyingPrice1;
+        sellingprice=sellingprice1;
+      });
       return total;
     }
 
     Future<void> _signOut(BuildContext context) async {
       try {
-        await _auth.signOut().then((value) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => Login()), // Navigate to your login screen
-          );
-        });
+        await _auth.signOut();
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => Login()),
+              (Route<dynamic> route) => false, // Remove all previous routes
+        );
       } catch (e) {
         print("Error signing out: $e");
         // Handle sign out error
       }
+    }
+
+    void _generatePDF () async{
+      final Directory? directory;
+      final ByteData fontData = await rootBundle.load('assets/fonts/Ubuntu-Medium.ttf');
+      final ttf = pw.Font.ttf(fontData.buffer.asByteData());
+      final image = pw.MemoryImage(
+        (await rootBundle.load('assets/images/logo_text.png'))
+            .buffer
+            .asUint8List(),
+      );
+
+
+      try{
+        final doc = pw.Document();
+        doc.addPage(pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) {
+
+            return pw.ListView(
+              children: [
+                pw.Container(
+                    padding: pw.EdgeInsets.fromLTRB(10, 0, 10, 0),
+                  child: pw.Column(
+                      mainAxisAlignment: pw.MainAxisAlignment.start,
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Center(
+                        child: pw.Image(
+                          image,
+                          width: 200,
+                          fit: pw.BoxFit.contain,
+                        ),
+                      ),
+                      pw.SizedBox(height: 20,),
+                      pw.Center(child: pw.Text('Reports',style: pw.TextStyle(font: ttf,fontWeight: pw.FontWeight.bold,fontSize: 40))),
+                      pw.SizedBox(height: 50,),
+                      pw.Center(
+                        child: pw.Row(
+                          children: [
+                            pw.Text('Start Date: ${DateFormat('yyyy-MM-dd').format(_startDate!)}'),
+                            pw.SizedBox(width: 30),
+                            pw.Text('End Date: ${DateFormat('yyyy-MM-dd').format(_endDate!)}'),
+                          ]
+                        ),
+                      ),
+                      pw.SizedBox(height: 20,),
+                      pw.Text('Total Number of Products: $totalNumber'),
+                      pw.SizedBox(height: 20,),
+                      pw.Text('Total Buying Price: $buyingprice'),
+                      pw.SizedBox(height: 20,),
+                      pw.Text('Total Selling Price: $sellingprice'),
+                      pw.SizedBox(height: 50,),
+                      pw.Text('Profit/Loss: $profitloss',style: pw.TextStyle(fontWeight: pw.FontWeight.bold,fontSize: 30)),
+
+                    ]
+                  )
+                ),
+              ],
+            );
+          }));
+
+        if (Platform.isIOS) {
+          directory = await getApplicationDocumentsDirectory();
+        } else {
+          directory = await getDownloadsDirectory();
+        }
+
+        if (directory == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Directory not found')),
+          );
+          return;
+        }
+        String path = directory.path;
+        String myFile =
+            '${path}/xoxo-ecommmerce(Seller Report)-${DateFormat('yyyy-MM-dd').format(_startDate!)}-${DateFormat('yyyy-MM-dd').format(_endDate!)}.pdf';
+        final file = File(myFile);
+        await file.writeAsBytes(await doc.save());
+        OpenFile.open(myFile);
+
+
+      }catch(e){
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error $e')),
+        );
+        debugPrint("$e");
+
+      }
+
+
     }
 
     if (_filteredData.isNotEmpty) {
@@ -173,7 +288,13 @@ class _ReportsState extends State<Reports> {
                   style: TextStyle(fontSize: height * 0.025, fontWeight: FontWeight.bold),
                 ),
               ),
-            Padding(
+              SizedBox(height: 10,),
+              _filteredData.isNotEmpty? ElevatedButton(onPressed: (){
+                _generatePDF();
+              }, child: Text('Generate Pdf')):Container(),
+
+
+              Padding(
               padding: const EdgeInsets.all(8.0),
               child: Container(
                 height: height * 0.3,
@@ -264,6 +385,7 @@ class _ReportsState extends State<Reports> {
                 },
               ),
             ),
+
           ],
         ),
       ),

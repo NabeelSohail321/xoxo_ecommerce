@@ -34,12 +34,12 @@ class _cartState extends State<cart> {
 
   Future<void> _signOut(BuildContext context) async {
     try {
-      await _auth.signOut().then((value) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => Login()), // Navigate to your login screen
-        );
-      });
+      await _auth.signOut();
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => Login()),
+            (Route<dynamic> route) => false, // Remove all previous routes
+      );
     } catch (e) {
       print("Error signing out: $e");
       // Handle sign out error
