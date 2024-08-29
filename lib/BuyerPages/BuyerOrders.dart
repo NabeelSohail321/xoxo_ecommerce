@@ -7,7 +7,6 @@ import '../Authentication/Login.dart';
 class BuyerOrders extends StatefulWidget {
   String uid;
 
-
   BuyerOrders(this.uid);
 
   @override
@@ -20,16 +19,7 @@ class _BuyerOrdersState extends State<BuyerOrders> {
   @override
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
-    final oref = FirebaseDatabase.instance.ref('BuyerOrders');
-
-    String? name ;
-    String? description;
-    String? img ;
-    String? number ;
-    String? price;
-    bool _noDataFound = false;
-    String? status;
-    String? date;
+    final oref = FirebaseDatabase.instance.ref('orders');
 
     Widget buildCircularProgressIndicator() {
       return CircularProgressIndicator(
@@ -37,20 +27,56 @@ class _BuyerOrdersState extends State<BuyerOrders> {
       );
     }
 
-
-
     Future<void> _signOut(BuildContext context) async {
       try {
         await _auth.signOut();
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => Login()),
-              (Route<dynamic> route) => false, // Remove all previous routes
+              (Route<dynamic> route) => false,
         );
       } catch (e) {
         print("Error signing out: $e");
-        // Handle sign out error
       }
+    }
+
+    void _showItemsDialog(List<dynamic> itemsList) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Order Items"),
+            content: SingleChildScrollView(
+              child: Column(
+                children: itemsList.map((item) {
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: NetworkImage(item['img']),
+                    ),
+                    title: Text(item['name']),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Description: ${item['description']}"),
+                        Text("Price: ${item['price']}"),
+                        Text("Quantity: ${item['number']}"),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                child: Text("Close"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
     }
 
     return Scaffold(
@@ -97,126 +123,70 @@ class _BuyerOrdersState extends State<BuyerOrders> {
               Icon(Icons.shopping_cart, size: height * 0.03),
             ],
           ),
-
           Expanded(
             child: StreamBuilder(
               stream: oref.orderByChild('uid').equalTo(widget.uid).onValue,
               builder: (context, AsyncSnapshot<DatabaseEvent> snapshot) {
-                if (!snapshot.hasData && !_noDataFound) {
+                if (!snapshot.hasData) {
                   return Center(
                     child: buildCircularProgressIndicator(),
                   );
                 } else if (snapshot.hasData && snapshot.data!.snapshot.value != null) {
-                  Map<dynamic, dynamic> map = snapshot.data!.snapshot.value as dynamic;
-                  if (map == null) {
-                    return Center(child: Text("No Product Found"));
+                  Map<dynamic, dynamic> ordersMap = snapshot.data!.snapshot.value as dynamic;
+                  if (ordersMap == null) {
+                    return Center(child: Text("No Orders Found"));
                   }
-                  List<dynamic> list = map.values.toList();
+                  List<dynamic> ordersList = ordersMap.values.toList();
 
-
-                  return Column(
-                    children: [
-                      Expanded(
-                        child: ListView.builder(
-                          reverse: true,
-                          itemCount: list.length,
-                          itemBuilder: (context, index) {
-                            name = list[index]['name'].toString();
-                            description = list[index]['description'].toString();
-                            price = list[index]['price'].toString();
-                            img = list[index]['img'].toString();
-                            number = list[index]['number'].toString();
-                            status = list[index]['status'].toString().toLowerCase();
-                            date= list[index]['date'];
-
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 6),
-                              child: Card(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15.0),
-                                  side: BorderSide(
-                                    color: status=='false'? Colors.red:Colors.green, // Border color
-                                    width: 3.0, // Border width
-                                  ),
-                                ),
-                                elevation: 10,
-                                child: Container(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      ListTile(
-
-                                        contentPadding: EdgeInsets.zero,
-                                        title: Text(
-                                          name!,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        leading: CircleAvatar(
-                                          radius: 30,
-                                          backgroundImage: NetworkImage(img!),
-                                        ),
-                                        trailing: Padding(
-                                          padding: const EdgeInsets.only(top: 10.0),
-                                          child: Column(
-                                            children: [
-                                              Text('Date is: $date',style: TextStyle(color: Colors.black)),
-                                              Text('Quantity is: $number',style: TextStyle(color: Colors.black))
-                                            ],
-                                          ),
-                                        ),
-                                        subtitle: Text(description!,style: TextStyle(color: Colors.black),)
-                                      ),
-                                      (status == 'false')? Center(
-                                        child: Text(
-                                          'Order Pending',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
-                                        ),
-                                      ):(status=='true')? Center(
-                                        child: Text(
-                                          'Deliver in 10 to 15 days',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
-                                        ),
-                                      ): Center(
-                                        child: Text(
-                                          'Order Delivered',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                  return ListView.builder(
+                    // reverse: true,
+                    itemCount: ordersList.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 6),
+                        child: Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15.0),
+                            side: BorderSide(
+                              color: ordersList[index]['status']=='deliver'? Colors.blue:  Colors.red, // Border color
+                              width: 3.0, // Border width
+                            ),
+                          ),
+                          elevation: 10,
+                          child: ListTile(
+                            title: Text(
+                              "Order ID: ${ordersList[index]['cartId']}",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
                               ),
-                            );
-                          },
+                            ),
+                            subtitle: Column(
+                              children: [
+                                Text("Order Date: ${ordersList[index]['date']}"),
+                                Text("Total Bill: ${ordersList[index]['totalBill']}" ),
+                                ordersList[index]['status']=='false'? Text("status: Pending"):ordersList[index]['status']=='deliver'? Text("status: delivered"):Text("status: will be delivered in 7 working days")
+                              ],
+                            ),
+                            
+                            onTap: () {
+                              // Extract items from the order and display in dialog
+                              Map<dynamic, dynamic> itemsMap = ordersList[index]['items'];
+                              List<dynamic> itemsList = itemsMap.values.toList();
+                              _showItemsDialog(itemsList);
+                            },
+                          ),
                         ),
-                      ),
-                    ],
+                      );
+                    },
                   );
                 } else {
-                  return Center(child: Text("No Product Found"));
+                  return Center(child: Text("No Orders Found"));
                 }
               },
             ),
           ),
-
         ],
       ),
-
     );
   }
 }

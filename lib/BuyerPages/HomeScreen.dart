@@ -41,6 +41,7 @@ class _HomescreenbState extends State<Homescreenb> {
     return Scaffold(
 
       appBar: AppBar(
+        backgroundColor: Colors.blueGrey,
         automaticallyImplyLeading: false,
         title: Text(
           'xoxo',
@@ -58,7 +59,7 @@ class _HomescreenbState extends State<Homescreenb> {
               child: InkWell(onTap: (){
                 _signOut(context);
               },
-                  child: Icon(Icons.logout, size: height*0.06,))
+                  child: Icon(Icons.logout, size: height*0.06,color: Colors.black,))
           )
         ],
       ),
@@ -95,6 +96,7 @@ class _MobileLayoutState extends State<MobileLayout> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blueGrey[300],
       body: GridView.count(
         crossAxisCount: 2,
         padding: EdgeInsets.all(10.0),
@@ -162,6 +164,7 @@ class DashboardCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: Colors.blueGrey[100],
       elevation: 7,
       margin: EdgeInsets.all(10.0),
       child: Center(

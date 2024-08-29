@@ -247,7 +247,8 @@ class _ProductsPageState extends State<ProductsPage> {
   }
 
   Future<void> showmyDialog() async {
-    return showDialog(
+    return
+      showDialog(
       context: context,
       builder: (BuildContext bcontext) {
         return StatefulBuilder(

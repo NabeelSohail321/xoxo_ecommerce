@@ -192,14 +192,14 @@ class _OrderDeliveredState extends State<OrderDelivered> {
                           borderRadius: BorderRadius.circular(10.0),
                         ),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your phone number';
-                        } else if (!RegExp(r'^\+92\d{10}$').hasMatch(value)) {
-                          return 'Please enter a valid phone number in the format +92 3XXXXXXXXX';
-                        }
-                        return null;
-                      },
+                      // validator: (value) {
+                      //   if (value == null || value.isEmpty) {
+                      //     return 'Please enter your phone number';
+                      //   } else if (!RegExp(r'^\+92\d{10}$').hasMatch(value)) {
+                      //     return 'Please enter a valid phone number in the format +92 3XXXXXXXXX';
+                      //   }
+                      //   return null;
+                      // },
                     ),
                   ),
                   IconButton(
@@ -238,7 +238,7 @@ class _OrderDeliveredState extends State<OrderDelivered> {
                   List<dynamic> pendingList = list.where((element) => element['status'].toString().toLowerCase() == 'deliver').toList();
                   List<dynamic> searchList = phone == null
                       ? pendingList
-                      : pendingList.where((element) => element['phone'].toString() == phone).toList();
+                      : pendingList.where((element) => element['phone'].toString().contains(phone as Pattern)).toList();
 
                   if (searchList.isEmpty) {
                     return Center(child: Text("No Product Found"));
