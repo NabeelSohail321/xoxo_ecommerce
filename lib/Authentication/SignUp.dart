@@ -34,6 +34,7 @@ class _SignupState extends State<Signup> {
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _status= false;
 
   Future<void> getImage() async {
     final ImagePicker imagePicker = ImagePicker();
@@ -87,6 +88,7 @@ class _SignupState extends State<Signup> {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
           'xoxo',
           style: TextStyle(
@@ -96,26 +98,41 @@ class _SignupState extends State<Signup> {
           ),
         ),
         centerTitle: true,
-        toolbarHeight: height * 0.2,
+        toolbarHeight: height * 0.1,
       ),
       body: SingleChildScrollView(
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: width * 0.1),
           child: Column(
             children: [
+              SizedBox(height: height * 0.03),
+
               (file != null || pickfile != null)
                   ? CircleAvatar(
                 radius: 60,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.all(Radius.circular(60)),
-                    image: DecorationImage(
-                      image: kIsWeb
-                          ? NetworkImage(pickfile.path) as ImageProvider
-                          : FileImage(file!),
-                      fit: BoxFit.cover,
+                child: Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.all(Radius.circular(60)),
+                        image: DecorationImage(
+                          image: kIsWeb
+                              ? NetworkImage(pickfile.path) as ImageProvider
+                              : FileImage(file!),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
-                  ),
+                    Positioned(
+                      bottom: -10,
+                        right: -3,
+                        child: IconButton(onPressed: (){
+                      setState(() {
+                        file=null;
+                        pickfile=null;
+                      });
+                    },icon: Icon(Icons.delete,color: Colors.red,size: 30,),))
+                  ]
                 ),
               )
                   : InkWell(
@@ -128,7 +145,7 @@ class _SignupState extends State<Signup> {
                   ),
                 ),
               ),
-              SizedBox(height: height * 0.06),
+              SizedBox(height: height * 0.03),
               Form(
                 key: _formKey,
                 child: Column(
@@ -307,84 +324,105 @@ class _SignupState extends State<Signup> {
                     ),
                     SizedBox(height: height * 0.02),
                     SizedBox(height: 20),
-                    PopupMenuButton<String>(
-                      initialValue: role, // Set initial value here
-                      onSelected: (String value) {
-                        setState(() {
-                          role = value;
-                        });
-                      },
-                      itemBuilder: (BuildContext context) =>
-                      <PopupMenuEntry<String>>[
-                        const PopupMenuItem<String>(
-                          value: '1',
-                          child: Text('Seller'),
-                        ),
-                        const PopupMenuItem<String>(
-                          value: '2',
-                          child: Text('Buyer'),
-                        ),
-                        const PopupMenuItem<String>(
-                          value: '3',
-                          child: Text('Rider'),
-                        ),
-                      ],
-                      child: ListTile(
-                        title: Text('Role'),
-                        trailing: Text(
-                          role == '1'
-                              ? 'Seller'
-                              : role == '2'
-                              ? 'Buyer'
-                              : 'Rider',
-                        ),
-                        leading: Icon(
-                          role == '1'
-                              ? Icons.person
-                              : role == '2'
-                              ? Icons.shopping_cart
-                              : Icons.electric_bike,
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.black12,width: 1.0,style: BorderStyle.solid,),
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      child: PopupMenuButton<String>(
+                        initialValue: role, // Set initial value here
+                        onSelected: (String value) {
+                          setState(() {
+                            role = value;
+                          });
+                        },
+                        itemBuilder: (BuildContext context) =>
+                        <PopupMenuEntry<String>>[
+                          const PopupMenuItem<String>(
+                            value: '1',
+                            child: Text('Seller'),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: '2',
+                            child: Text('Buyer'),
+                          ),
+                          const PopupMenuItem<String>(
+                            value: '3',
+                            child: Text('Rider'),
+                          ),
+                        ],
+                        child: ListTile(
+                          title: Text('Role'),
+                          trailing: Text(
+                            role == '1'
+                                ? 'Seller'
+                                : role == '2'
+                                ? 'Buyer'
+                                : 'Rider',
+                            style: TextStyle(fontSize: 15),
+                          ),
+                          leading: Icon(
+                            role == '1'
+                                ? Icons.person
+                                : role == '2'
+                                ? Icons.shopping_cart
+                                : Icons.electric_bike,
+                          ),
                         ),
                       ),
                     ),
                     SizedBox(height: height * 0.02),
-                    ElevatedButton(
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          // await uploadImage();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => Verification(
-                                phoneNumber: _phoneController.text,
-                                name: _nameController.text,
-                                email: _emailController.text,
-                                password: _passwordController.text,
-                                role: role,
-                                file: file,
-                                pickfile: pickfile,
+                    SizedBox(
+                      height: 50,
+                      width: 200,
+                      child: _status==false? ElevatedButton(
+                        onPressed: () async {
+                          if (_formKey.currentState!.validate()) {
+                            setState(() {
+                              _status=true;
+                            });
+                            // await uploadImage();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => Verification(
+                                  phoneNumber: _phoneController.text,
+                                  name: _nameController.text,
+                                  email: _emailController.text,
+                                  password: _passwordController.text,
+                                  role: role,
+                                  file: file,
+                                  pickfile: pickfile,
+                                ),
                               ),
-                            ),
-                          );
-                        }
-                      },
-                      child: Text('Sign Up'),
+                            );
+                          }
+                        },
+                        child: Text('Sign Up',style: TextStyle(fontSize: 25,fontFamily: 'Ubuntu',fontWeight: FontWeight.bold, color: Colors.white),),
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+                      ): CircularProgressIndicator(),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: TextButton(
-                        onPressed: () {
-                          setState(() {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => Login()));
-                          });
-                        },
-                        child: Text(
-                          'Login?',
-                          style: TextStyle(fontSize: 15),
-                        ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('If you already have an account?'),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => Login()));
+                              });
+                            },
+                            child: Text(
+                              'Login!',
+                              style: TextStyle(fontSize: 15),
+                            ),
+                          )
+                        ],
                       ),
                     )
                   ],

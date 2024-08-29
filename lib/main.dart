@@ -2,7 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:xoxo_ecommerce/Authentication/Login.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'Authentication/SignUp.dart';
 import 'BuyerPages/HomeScreen.dart';
 import 'RiderPages/Rider.dart';
@@ -14,6 +15,9 @@ void main() async{
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  await dotenv.load(fileName: ".env");
+  Stripe.publishableKey=dotenv.env["STRIPE_PUBLISH_KEY"]!;
+  await Stripe.instance.applySettings();
   runApp(const MyApp());
 
 }

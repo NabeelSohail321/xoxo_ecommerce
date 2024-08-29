@@ -42,15 +42,29 @@ class _DisplayState extends State<Display> {
   Widget build(BuildContext context) {
     final height = MediaQuery.of(context).size.height;
     return Scaffold(
+      backgroundColor: Colors.blueGrey[300],
       appBar: AppBar(
+        backgroundColor: Colors.blueGrey,
         automaticallyImplyLeading: false,
-        title: Text(
-          'xoxo',
-          style: TextStyle(
-            fontSize: height * 0.1,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Ubuntu',
-          ),
+        title: Column(
+          children: [
+            Text(
+              'xoxo',
+              style: TextStyle(
+                fontSize: height * 0.1,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Ubuntu',
+              ),
+            ),
+            Text(
+              "Products",
+              style: TextStyle(
+                fontSize: height * 0.03,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Ubuntu',
+              ),
+            ),
+          ],
         ),
         centerTitle: true,
         toolbarHeight: height * 0.2,
@@ -85,52 +99,46 @@ class _DisplayState extends State<Display> {
       ),
       body: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                "Products",
-                style: TextStyle(
-                  fontSize: height * 0.03,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Ubuntu',
-                ),
-              ),
-            ],
-          ),
+
           SizedBox(height: 20,),
           Container(
             width: MediaQuery.of(context).size.width*0.5,
-            child: PopupMenuButton<String>(
-              initialValue: category, // Set initial value here
-              onSelected: (String value) {
-                setState(() {
-                  category = value;
-                });
-              },
-              itemBuilder: (BuildContext context) =>
-              <PopupMenuEntry<String>>[
-                const PopupMenuItem<String>(
-                  value: 'clothe',
-                  child: Text('Clothes'),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'electronics',
-                  child: Text('Electronics'),
-                ),
-                const PopupMenuItem<String>(
-                  value: 'appliances',
-                  child: Text('Appliances'),
-                ),
-              ],
-              child: ListTile(
-                title: Text('Category'),
-                trailing: Text(
-                  category == 'clothe'
-                      ? 'Clothes'
-                      : category == 'electronics'
-                      ? 'Electronics'
-                      : 'Applpiances',
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.black,style: BorderStyle.solid),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: PopupMenuButton<String>(
+                initialValue: category, // Set initial value here
+                onSelected: (String value) {
+                  setState(() {
+                    category = value;
+                  });
+                },
+                itemBuilder: (BuildContext context) =>
+                <PopupMenuEntry<String>>[
+                  const PopupMenuItem<String>(
+                    value: 'clothe',
+                    child: Text('Clothes'),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'electronics',
+                    child: Text('Electronics'),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'appliances',
+                    child: Text('Appliances'),
+                  ),
+                ],
+                child: ListTile(
+                  title: Text('Category'),
+                  trailing: Text(
+                    category == 'clothe'
+                        ? 'Clothes'
+                        : category == 'electronics'
+                        ? 'Electronics'
+                        : 'Applpiances',
+                  ),
                 ),
               ),
             ),
@@ -244,11 +252,12 @@ class _DashboardCardState extends State<DashboardCard> {
         }, maintainState: true));
       },
       child: Card(
-        color: Colors.grey.shade200,
-        shape: RoundedRectangleBorder(
+          color: Colors.blueGrey[100],
+
+          shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15.0),
           side: BorderSide(
-            color: Colors.orangeAccent, // Border color
+            color: Colors.black, // Border color
             width: 4.0, // Border width
           ),
         ),

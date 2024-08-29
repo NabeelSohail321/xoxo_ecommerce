@@ -13,7 +13,7 @@ class Rider extends StatefulWidget {
 
 class _RiderState extends State<Rider> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final oref = FirebaseDatabase.instance.ref('BuyerOrders');
+  final oref = FirebaseDatabase.instance.ref('orders');
 
 
 
@@ -27,21 +27,21 @@ class _RiderState extends State<Rider> {
   Future<void> _AcceptOrders(List<dynamic> list, int index) async {
     // Ensure list is not empty and index is valid
     if (list.isNotEmpty && index < list.length) {
-      String cid = list[index]['cid'];
+      String cid = list[index]['cartId'];
       String status = list[index]['status'].toString().toLowerCase();
 
       // Debugging output
       print("Delivering order with cid: $cid and status: $status");
 
-      if (status == 'true') {
+      if (status == 'false') {
         // Query to find the order by cid
-        DataSnapshot snapshot = await oref.orderByChild('cid').equalTo(cid).get();
+        DataSnapshot snapshot = await oref.orderByChild('cartId').equalTo(cid).get();
 
         if (snapshot.exists) {
           Map<dynamic, dynamic> map1 = snapshot.value as Map<dynamic, dynamic>;
 
           // Find the key for the order to update
-          String key = map1.keys.firstWhere((k) => map1[k]['cid'] == cid);
+          String key = map1.keys.firstWhere((k) => map1[k]['cartId'] == cid);
 
           // print(key);
           await oref.child(key).update({'status': 'deliver'}).then((value) {
@@ -97,6 +97,44 @@ class _RiderState extends State<Rider> {
     String? status;
     String? date;
     String? cid;
+    void _showItemsDialog(List<dynamic> itemsList) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Order Items"),
+            content: SingleChildScrollView(
+              child: Column(
+                children: itemsList.map((item) {
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: NetworkImage(item['img']),
+                    ),
+                    title: Text(item['name']),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("Description: ${item['description']}"),
+                        Text("Price: ${item['price']}"),
+                        Text("Quantity: ${item['number']}"),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                child: Text("Close"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -113,15 +151,16 @@ class _RiderState extends State<Rider> {
         toolbarHeight: height * 0.2,
         actions: [
           Padding(
-              padding:  EdgeInsets.symmetric(vertical: height* 0.08, horizontal: height* 0.01 ),
-              child: InkWell(onTap: (){
+            padding: EdgeInsets.symmetric(vertical: height * 0.08, horizontal: height * 0.01),
+            child: InkWell(
+              onTap: () {
                 _signOut(context);
               },
-                  child: Icon(Icons.logout, size: height*0.06,))
-          )
+              child: Icon(Icons.logout, size: height * 0.06),
+            ),
+          ),
         ],
       ),
-
       body: Column(
         children: [
           Row(
@@ -141,104 +180,67 @@ class _RiderState extends State<Rider> {
               Icon(Icons.shopping_cart, size: height * 0.03),
             ],
           ),
-
-
           Expanded(
             child: StreamBuilder(
-              stream: oref.orderByChild('status').equalTo(status1).onValue,
+              stream: oref.onValue,
               builder: (context, AsyncSnapshot<DatabaseEvent> snapshot) {
-                if (!snapshot.hasData && !_noDataFound) {
+                if (!snapshot.hasData) {
                   return Center(
                     child: buildCircularProgressIndicator(),
                   );
                 } else if (snapshot.hasData && snapshot.data!.snapshot.value != null) {
-                  Map<dynamic, dynamic> map = snapshot.data!.snapshot.value as dynamic;
-                  if (map == null) {
+                  Map<dynamic, dynamic> ordersMap = snapshot.data!.snapshot.value as dynamic;
+                  if (ordersMap == null) {
                     return Center(child: Text("No Orders Found"));
                   }
-                  List<dynamic> list = map.values.toList();
+                  List<dynamic> ordersList = ordersMap.values.toList();
 
-                  return Column(
-                    children: [
-                      Expanded(
-                        child: ListView.builder(
-                          itemCount: list.length,
-                          itemBuilder: (context, index) {
-                            name = list[index]['name'].toString();
-                            description = list[index]['description'].toString();
-                            price = list[index]['price'].toString();
-                            img = list[index]['img'].toString();
-                            number = list[index]['number'].toString();
-                            status = list[index]['status'].toString().toLowerCase();
-                            date = list[index]['date'];
-                            cid = list[index]['cid'];
-
-                            // print(list);
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 6),
-                              child: Card(
-                                elevation: 10,
-                                child: Container(
-
-                                  height: status == 'true' ?height * 0.17: height*0.15,
-                                  padding: EdgeInsets.all(8.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.center,
-                                    children: [
-                                      ListTile(
-                                        contentPadding: EdgeInsets.zero,
-                                        title: Text(
-                                          name!,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        leading: CircleAvatar(
-                                          radius: 30,
-                                          backgroundImage: NetworkImage(img!),
-                                        ),
-                                        trailing: Padding(
-                                          padding: EdgeInsets.only(top: height * 0.01),
-                                          child: Column(
-                                            children: [
-                                              Text('date is: $date'),
-                                              Text('quantity is: $number'),
-                                            ],
-                                          ),
-                                        ),
-                                        subtitle: (status == 'true')
-                                            ? Text(
-                                          'Order Pending',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
-                                        )
-                                            : Text(
-                                          'Delivered',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis, // Add ellipsis to handle overflow
-                                        ),
-                                      ),
-                                      status == 'true'?
-                                      ElevatedButton(
-                                          onPressed: () async {
-                                            await _AcceptOrders(list,index);
-                                          },
-                                          child: Text('Deliver ?')):Text('Delivered to Customer')
-                                    ],
-                                  ),
-                                ),
+                  return ListView.builder(
+                    // reverse: true,
+                    itemCount: ordersList.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 6),
+                        child: Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15.0),
+                            side: BorderSide(
+                              color: ordersList[index]['status']=='deliver'? Colors.blue:  Colors.red, // Border color
+                              width: 3.0, // Border width
+                            ),
+                          ),
+                          elevation: 10,
+                          child: ListTile(
+                            title: Text(
+                              "Order ID: ${ordersList[index]['cartId']}",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
                               ),
-                            );
-                          },
+                            ),
+                            subtitle: Column(
+                              children: [
+                                Text("Order Date: ${ordersList[index]['date']}"),
+                                Text("Total Bill: ${ordersList[index]['totalBill']}" ),
+                                ordersList[index]['status']=='false'? Text("status: Pending"):ordersList[index]['status']=='deliver'? Text("status: delivered"):Text("status: will be delivered in 7 working days"),
+                              ordersList[index]['status']=='false'?
+                                ElevatedButton(
+                                    onPressed: () async {
+                                      await _AcceptOrders(ordersList,index);
+                                    },
+                                    child: Text('Deliver ?')):Text('Delivered to Customer')
+                              ],
+                            ),
+
+                            onTap: () {
+                              // Extract items from the order and display in dialog
+                              Map<dynamic, dynamic> itemsMap = ordersList[index]['items'];
+                              List<dynamic> itemsList = itemsMap.values.toList();
+                              _showItemsDialog(itemsList);
+                            },
+                          ),
                         ),
-                      ),
-                    ],
+                      );
+                    },
                   );
                 } else {
                   return Center(child: Text("No Orders Found"));
@@ -246,7 +248,6 @@ class _RiderState extends State<Rider> {
               },
             ),
           ),
-
         ],
       ),
     );
